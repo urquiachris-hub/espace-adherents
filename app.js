@@ -172,8 +172,15 @@
   const journal = {
     lire() { return store.get('aa_journal', []).sort((a, b) => a.jour.localeCompare(b.jour)); },
     ecrire(e) { const all = journal.lire().filter((x) => x.jour !== e.jour); all.push(e); store.set('aa_journal', all); },
-    effacer() { store.del('aa_journal'); },
+    effacer() { store.del('aa_journal'); store.del('aa_carnet'); store.del('aa_plan'); },
   };
+  // Carnet des pensées et plan de crise : eux aussi restent sur l'appareil.
+  const carnet = {
+    lire() { return store.get('aa_carnet', []).sort((a, b) => b.jour.localeCompare(a.jour)); },
+    ajouter(e) { const all = store.get('aa_carnet', []); all.push(e); store.set('aa_carnet', all); },
+    suppr(id) { store.set('aa_carnet', store.get('aa_carnet', []).filter((x) => x.id !== id)); },
+  };
+  const plan = { lire() { return store.get('aa_plan', {}); }, ecrire(p) { store.set('aa_plan', p); } };
 
   // ---------- état ----------
   let api = null, moi = null;
@@ -213,7 +220,7 @@
       <a class="lien-carte" href="#/journal"><div class="carte"><div class="sur-titre">Mon journal</div><h2>${j ? 'Noté pour aujourd\'hui, merci.' : 'Comment ça va aujourd\'hui ?'}</h2><p class="muet petit">${j ? `Gêne ${j.gene}/10 · sommeil ${j.sommeil}/10` : 'Trente secondes pour suivre votre acouphène, votre sommeil et votre stress.'}</p></div></a>
       <section class="grille" aria-label="Raccourcis">
         <a class="tuile" href="#/sons">${ico('sons')}<strong>Sons apaisants</strong><span class="muet petit">Bruit rose, pluie, océan, avec minuterie</span></a>
-        <a class="tuile" href="#/sophro">${ico('sophro')}<strong>Souffler</strong><span class="muet petit">Respiration et sophrologie guidées</span></a>
+        <a class="tuile" href="#/sophro">${ico('sophro')}<strong>Souffler</strong><span class="muet petit">Sophrologie et exercices guidés à la voix</span></a>
         <a class="tuile" href="#/articles">${ico('articles')}<strong>Comprendre</strong><span class="muet petit">Articles relus et sourcés</span></a>
         <a class="tuile" href="#/echanges">${ico('echanges')}<strong>Échanges</strong><span class="muet petit">Entre adhérents, en confiance</span></a>
         <a class="tuile" href="#/lettre">${ico('lettre')}<strong>La lettre</strong><span class="muet petit">Toutes les newsletters</span></a>
@@ -283,43 +290,108 @@
   };
 
   let souffleTimer = null;
+  const CAT_DEF = 'Sophrologie et détente';
+  const CATS_EX = ['Sophrologie et détente', 'Mieux vivre avec'];
+  const INTRO_EX = {
+    'Sophrologie et détente': 'Respiration, relaxation et sophrologie pour relâcher la tension quand le bruit prend trop de place.',
+    'Mieux vivre avec': "Exercices d'auto-assistance inspirés des thérapies cognitivo-comportementales (TCC), recommandées par la HAS. Ils ne remplacent pas une thérapie avec un professionnel.",
+  };
+  // Étapes : une par ligne ; « [10] » en fin de ligne = 10 s de pause après la lecture par la voix.
+  const parseEtapes = (txt) => (txt || '').split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+    const m = l.match(/^(.*?)\s*\[(\d+)\]\s*$/);
+    return m ? { t: m[1], p: Number(m[2]) } : { t: l, p: null };
+  });
+  const guide = { on: false, timer: null, stop() { this.on = false; clearTimeout(this.timer); try { window.speechSynthesis.cancel(); } catch (e) { /* rien */ } } };
+  function voixFr() {
+    try {
+      const vs = window.speechSynthesis.getVoices().filter((x) => /^fr/i.test(x.lang));
+      return vs.find((x) => /fr[-_]FR/i.test(x.lang) && /google|amélie|amelie|thomas|audrey|marie|denise|henri/i.test(x.name)) || vs.find((x) => /fr[-_]FR/i.test(x.lang)) || vs[0] || null;
+    } catch (e) { return null; }
+  }
+  try { window.speechSynthesis && window.speechSynthesis.getVoices(); } catch (e) { /* rien */ }
+
   VUES.sophro = async (v, [, id]) => {
-    const all = await data('sophro');
+    const all = (await data('sophro')).filter((s) => s.publie !== false || moi.role === 'admin');
     if (id) {
       const s = all.find((x) => x.id === id);
-      if (!s) { v.innerHTML = '<p>Exercice introuvable.</p>'; return; }
-      const r = (s.rythme || '').match(/^(\d+)-(\d+)$/);
+      if (!s) { v.innerHTML = '<p>Exercice introuvable.</p><a href="#/sophro">Retour aux exercices</a>'; return; }
+      const etapes = parseEtapes(s.etapes);
+      const r = /^\d+(-\d+){1,3}$/.test(s.rythme || '') ? s.rythme.split('-').map(Number) : null;
+      const tts = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+      const cat = s.categorie || CAT_DEF;
       v.innerHTML = `<a href="#/sophro" class="petit">← Tous les exercices</a>
-        <header><div class="sur-titre">${esc(s.duree_min || '')} min ${s.valide ? '' : '· <span class="chip rouge">En attente de relecture</span>'}</div><h1>${esc(s.titre)}</h1><p class="muet">${esc(s.objectif || '')}</p></header>
-        ${safeUrl(s.audio_url) ? `<div class="carte"><div class="sur-titre">Version guidée</div><audio controls preload="none" src="${esc(s.audio_url)}" style="width:100%"></audio></div>` : ''}
+        <header><div class="sur-titre">${esc(cat)} · ${esc(s.duree_min || '')} min ${s.valide ? '' : '· <span class="chip rouge">En attente de relecture</span>'}</div><h1>${esc(s.titre)}</h1><p class="muet">${esc(s.objectif || '')}</p></header>
+        ${safeUrl(s.audio_url) ? `<div class="carte"><div class="sur-titre">Version enregistrée</div><audio controls preload="none" src="${esc(s.audio_url)}" style="width:100%"></audio></div>` : ''}
+        ${tts && etapes.length ? `<div class="carte guide"><div class="sur-titre">Version guidée</div>
+          <p class="muet petit" style="margin:4px 0 10px">Une voix lit chaque étape et vous laisse le temps de la faire. Installez-vous, puis lancez. Pensez à monter le volume (sur iPhone, désactivez le mode silencieux).</p>
+          <div class="actions"><button type="button" class="btn" id="ecoute">Écouter le guidage</button><span class="muet petit" id="g-etat" aria-live="polite"></span></div></div>` : ''}
         ${r ? `<div class="carte souffle"><div class="bulle" id="bulle">Prêt·e ?</div><div class="actions"><button type="button" class="btn" id="go">Commencer</button></div><span class="muet petit" id="cpt" aria-live="polite"></span></div>` : ''}
-        <ol class="etapes">${(s.etapes || '').split('\n').filter((l) => l.trim()).map((l) => `<li><span>${esc(l)}</span></li>`).join('')}</ol>
-        <p class="muet petit">Exercices de détente rédigés pour l'association. Ils ne remplacent pas une prise en charge. Arrêtez si vous ressentez un inconfort.</p>`;
+        <ol class="etapes" id="etapes">${etapes.map((e) => `<li><span>${esc(e.t)}</span></li>`).join('')}</ol>
+        <p class="muet petit">${cat === 'Mieux vivre avec' ? "Exercices d'auto-assistance inspirés des TCC, rédigés pour l'association. Ils ne remplacent pas une thérapie. Si vous avez des idées suicidaires, appelez le 3114 (gratuit, 24 h/24)." : "Exercices de détente rédigés pour l'association. Ils ne remplacent pas une prise en charge. Arrêtez si vous ressentez un inconfort."}</p>`;
+
+      // Guidage vocal (voix de synthèse du téléphone)
+      const ecoute = v.querySelector('#ecoute');
+      if (ecoute) {
+        const lis = [...v.querySelectorAll('#etapes li')], etat = v.querySelector('#g-etat');
+        const marquer = (i) => lis.forEach((li, k) => { li.classList.toggle('actif', k === i); if (k === i) li.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+        const finGuide = (txt) => { guide.stop(); ecoute.textContent = 'Écouter le guidage'; marquer(-1); etat.textContent = txt || ''; };
+        const lire = (i) => {
+          if (!guide.on) return;
+          if (i >= etapes.length) { finGuide('Exercice terminé.'); return; }
+          marquer(i); etat.textContent = `Étape ${i + 1} sur ${etapes.length}`;
+          const u = new SpeechSynthesisUtterance(etapes[i].t);
+          u.lang = 'fr-FR'; u.rate = 0.85; const vx = voixFr(); if (vx) u.voice = vx;
+          let fait = false;
+          const suite = () => {
+            if (fait || !guide.on) return; fait = true;
+            const p = etapes[i].p != null ? etapes[i].p : Math.max(4, Math.min(15, Math.round(etapes[i].t.length / 12)));
+            guide.timer = setTimeout(() => lire(i + 1), p * 1000);
+          };
+          u.onend = suite; u.onerror = suite;
+          window.speechSynthesis.speak(u);
+        };
+        ecoute.addEventListener('click', () => {
+          if (guide.on) { finGuide('Guidage arrêté.'); return; }
+          guide.stop(); guide.on = true; ecoute.textContent = 'Arrêter le guidage';
+          lire(0);
+        });
+      }
+
+      // Animation de respiration : 2 temps (4-6, 5-5) ou 4 temps (respiration carrée 4-4-4-4)
       if (r) {
-        const ins = Number(r[1]), exp = Number(r[2]), bulle = v.querySelector('#bulle'), go = v.querySelector('#go'), cpt = v.querySelector('#cpt');
+        const ph = r.length >= 4
+          ? [['Inspirez', r[0], 1], ['Retenez', r[1], 1], ['Expirez', r[2], 0.6], ['Poumons vides', r[3], 0.6]]
+          : r.length === 3 ? [['Inspirez', r[0], 1], ['Retenez', r[1], 1], ['Expirez', r[2], 0.6]]
+            : [['Inspirez', r[0], 1], ['Expirez', r[1], 0.6]];
+        const bulle = v.querySelector('#bulle'), go = v.querySelector('#go'), cpt = v.querySelector('#cpt');
+        if (r.length >= 4) bulle.classList.add('carre');
         let on = false;
         const arret = () => { clearTimeout(souffleTimer); on = false; go.textContent = 'Commencer'; bulle.textContent = 'Prêt·e ?'; bulle.style.transitionDuration = '1s'; bulle.style.transform = 'scale(.6)'; cpt.textContent = ''; };
         go.addEventListener('click', () => {
           if (on) return arret();
           on = true; go.textContent = 'Arrêter';
           const fin = Date.now() + (s.duree_min || 5) * 60000;
-          const cycle = (phase) => {
+          const cycle = (k) => {
             if (!on) return;
             if (Date.now() >= fin) { arret(); bulle.textContent = 'Terminé'; return; }
-            const d = phase ? ins : exp;
+            const [lab, d, sc] = ph[k % ph.length];
+            if (!d) { cycle(k + 1); return; }
             bulle.style.transitionDuration = d + 's';
-            bulle.style.transform = phase ? 'scale(1)' : 'scale(.6)';
-            bulle.textContent = phase ? 'Inspirez' : 'Expirez';
+            bulle.style.transform = `scale(${sc})`;
+            bulle.textContent = lab;
             cpt.textContent = `Encore ${Math.ceil((fin - Date.now()) / 60000)} min`;
-            souffleTimer = setTimeout(() => cycle(!phase), d * 1000);
+            souffleTimer = setTimeout(() => cycle(k + 1), d * 1000);
           };
-          cycle(true);
+          cycle(0);
         });
       }
       return;
     }
-    v.innerHTML = `<h1>Souffler</h1><p class="muet">Respiration et exercices inspirés de la sophrologie, pour relâcher la tension quand le bruit prend trop de place.</p>
-      <div class="liste">${all.map((s) => `<a class="lien-carte" href="#/sophro/${esc(s.id)}"><div class="carte"><div class="entete"><h2>${esc(s.titre)}</h2><span class="chip">${esc(s.duree_min || '')} min</span></div><p class="muet petit" style="margin:6px 0 0">${esc(s.objectif || '')}</p></div></a>`).join('')}</div>`;
+    const cats = [...CATS_EX, ...new Set(all.map((s) => s.categorie || CAT_DEF).filter((c) => !CATS_EX.includes(c)))];
+    const carte = (s) => `<a class="lien-carte" href="#/sophro/${esc(s.id)}"><div class="carte"><div class="entete"><h3 style="margin:0">${esc(s.titre)}</h3><span class="chip">${esc(s.duree_min || '')} min</span></div><p class="muet petit" style="margin:6px 0 0">${esc(s.objectif || '')}</p></div></a>`;
+    v.innerHTML = `<h1>Souffler</h1><p class="muet">Des exercices guidés à la voix : respiration, sophrologie, et outils pour mieux vivre avec l'acouphène. Choisissez-en un, installez-vous, laissez-vous guider.</p>
+      ${cats.map((c) => { const l = all.filter((s) => (s.categorie || CAT_DEF) === c); return l.length ? `<section class="liste" style="margin-top:18px"><h2>${esc(c)}</h2>${INTRO_EX[c] ? `<p class="muet petit" style="margin:0">${esc(INTRO_EX[c])}</p>` : ''}${l.map(carte).join('')}</section>` : ''; }).join('')}
+      ${all.length ? '' : '<p class="muet">Aucun exercice pour l\'instant.</p>'}`;
   };
 
   VUES.lettre = async (v) => {
@@ -363,6 +435,7 @@
     v.innerHTML = `<h1>Mon journal</h1>
       <p class="muet">Notez chaque jour en trente secondes. Au fil des semaines, vous verrez ce qui aide et ce qui pèse, et vous aurez des repères à montrer à votre médecin ou à votre ORL.</p>
       <div class="alerte petit">Vos notes restent uniquement sur cet appareil. Personne d'autre, pas même l'association, n'y a accès.</div>
+      <div class="onglets" aria-label="Aller à"><button type="button" data-go="fj">Suivi du jour</button><button type="button" data-go="carnet">Carnet des pensées</button><button type="button" data-go="plan">Mon plan de crise</button></div>
       <form class="carte form" id="fj">
         <div class="champ"><label for="jour">Jour</label><input type="date" id="jour" value="${esc(today.jour)}" max="${auj()}"></div>
         <div class="curseurs">${C4.map(([k, t, d]) => `<div><div class="curseur-l"><label for="j-${k}" style="margin:0">${t}</label><output id="o-${k}">${today[k]}</output></div><input type="range" id="j-${k}" min="0" max="10" step="1" value="${today[k]}" aria-describedby="d-${k}"><div class="muet petit" id="d-${k}">${d}</div></div>`).join('')}</div>
@@ -370,7 +443,34 @@
         <div class="actions"><button class="btn" type="submit">Enregistrer</button><span class="muet petit" id="j-ok" aria-live="polite"></span></div>
       </form>
       <section class="carte"><h2>Les 30 derniers jours</h2><div class="graph" id="graph"></div><div class="legende"><span><i style="background:var(--accent)"></i>Gêne</span><span><i style="background:var(--fg)"></i>Force</span><span><i style="background:var(--vert)"></i>Sommeil</span></div></section>
-      <section class="carte form"><h2>Mes données</h2><p class="muet petit">Copiez votre journal pour le coller dans un mail ou un tableur avant un rendez-vous.</p>
+
+      <section class="carte form" id="carnet"><h2>Carnet des pensées</h2>
+        <p class="muet petit" style="margin:0">Quand l'acouphène vous pèse, notez la situation et la pensée qui vous traverse, puis cherchez une pensée plus juste. L'exercice « Le carnet des pensées », dans Souffler, vous guide pas à pas.</p>
+        <form class="form" id="fc">
+          <div class="champ"><label for="c-sit">La situation</label><input id="c-sit" type="text" maxlength="300" placeholder="Hier soir, au coucher, dans le silence" required></div>
+          <div class="champ"><label for="c-pen">La pensée qui m'a traversé l'esprit</label><textarea id="c-pen" maxlength="600" placeholder="Ça ne s'arrêtera jamais, je ne vais pas dormir" required></textarea></div>
+          <div class="champ"><label for="c-emo">L'émotion ressentie</label><input id="c-emo" type="text" maxlength="100" placeholder="Angoisse, colère, découragement…"></div>
+          <div><div class="curseur-l"><label for="c-av" style="margin:0">Intensité de l'émotion, avant</label><output id="o-av">7</output></div><input type="range" id="c-av" min="0" max="10" step="1" value="7"></div>
+          <div class="champ"><label for="c-jus">Une pensée plus juste</label><textarea id="c-jus" maxlength="600" placeholder="C'est difficile ce soir, mais j'ai déjà réussi à m'endormir malgré le bruit"></textarea></div>
+          <div><div class="curseur-l"><label for="c-ap" style="margin:0">Intensité de l'émotion, après</label><output id="o-ap">5</output></div><input type="range" id="c-ap" min="0" max="10" step="1" value="5"></div>
+          <div class="actions"><button class="btn" type="submit">Ajouter au carnet</button><span class="muet petit" id="c-ok" aria-live="polite"></span></div>
+        </form>
+        <div id="c-liste" class="liste"></div>
+      </section>
+
+      <section class="carte form" id="plan"><h2>Mon plan de crise</h2>
+        <p class="muet petit" style="margin:0">À préparer un jour calme, pour l'avoir sous la main les jours difficiles. L'exercice « Mon plan de crise », dans Souffler, vous aide à le remplir.</p>
+        <form class="form" id="fp">
+          <div class="champ"><label for="p-sig">Mes signaux d'alerte</label><textarea id="p-sig" maxlength="800" placeholder="Fatigue, irritabilité, je m'isole, pensées noires…"></textarea></div>
+          <div class="champ"><label for="p-apa">Ce qui m'apaise vite</label><textarea id="p-apa" maxlength="800" placeholder="Pause SOS de 3 minutes, bruit de pluie, une marche, une douche chaude…"></textarea></div>
+          <div class="champ"><label for="p-pers">Les personnes que je peux appeler ou à qui écrire</label><textarea id="p-pers" maxlength="800" placeholder="Prénom et numéro"></textarea></div>
+          <div class="champ"><label for="p-soin">Mon médecin, mon ORL</label><textarea id="p-soin" maxlength="800" placeholder="Nom et numéro"></textarea></div>
+          <div class="actions"><button class="btn" type="submit">Enregistrer mon plan</button><span class="muet petit" id="p-ok" aria-live="polite"></span></div>
+        </form>
+        <div class="alerte petit">Si vous avez des idées suicidaires : <a href="tel:3114"><strong>3114</strong></a>, gratuit, 24 h/24. Urgence : <a href="tel:15"><strong>15</strong></a> ou <a href="tel:112"><strong>112</strong></a>. Personnes sourdes ou malentendantes : <strong>114</strong> par SMS.</div>
+      </section>
+
+      <section class="carte form"><h2>Mes données</h2><p class="muet petit">Copiez votre journal pour le coller dans un mail ou un tableur avant un rendez-vous. « Tout effacer » supprime aussi le carnet et le plan de crise.</p>
         <div class="actions"><button type="button" class="btn secondaire petit" id="copie">Copier mon journal</button><button type="button" class="btn secondaire petit" id="eff">Tout effacer</button></div><span class="petit muet" id="msg-d" aria-live="polite"></span>
         <textarea id="txt-d" hidden readonly></textarea></section>`;
     C4.forEach(([k]) => v.querySelector('#j-' + k).addEventListener('input', (e) => { v.querySelector('#o-' + k).textContent = e.target.value; }));
@@ -396,6 +496,43 @@
       if (!eff.dataset.ok) { eff.dataset.ok = '1'; eff.textContent = 'Confirmer : tout effacer'; return; }
       journal.effacer(); render();
     });
+
+    v.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => v.querySelector('#' + b.dataset.go).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+
+    // Carnet des pensées
+    ['av', 'ap'].forEach((k) => v.querySelector('#c-' + k).addEventListener('input', (e) => { v.querySelector('#o-' + k).textContent = e.target.value; }));
+    const dessinerCarnet = () => {
+      const l = carnet.lire();
+      v.querySelector('#c-liste').innerHTML = l.length ? `<details${l.length < 4 ? ' open' : ''}><summary class="muet">Mes notes (${l.length})</summary><div class="liste" style="margin-top:10px">${l.map((c) => `<div class="carte" style="background:var(--bg)">
+          <div class="sur-titre">${esc(fDate(c.jour))}</div>
+          <p style="margin:4px 0"><strong>Situation :</strong> ${esc(c.situation)}</p>
+          <p style="margin:4px 0"><strong>Pensée :</strong> ${esc(c.pensee)}${c.emotion ? ` <span class="muet">(${esc(c.emotion)})</span>` : ''} · ${esc(c.avant)}/10</p>
+          ${c.juste ? `<p style="margin:4px 0"><strong>Pensée plus juste :</strong> ${esc(c.juste)} · ${esc(c.apres)}/10</p>` : ''}
+          <button type="button" class="btn secondaire petit" data-sup="${esc(c.id)}">Supprimer</button></div>`).join('')}</div></details>` : '';
+      v.querySelectorAll('[data-sup]').forEach((b) => b.addEventListener('click', () => {
+        if (!b.dataset.ok) { b.dataset.ok = '1'; b.textContent = 'Confirmer'; return; }
+        carnet.suppr(b.dataset.sup); dessinerCarnet();
+      }));
+    };
+    v.querySelector('#fc').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const g = (id) => v.querySelector(id).value.trim();
+      carnet.ajouter({ id: uid(), jour: auj(), situation: g('#c-sit'), pensee: g('#c-pen'), emotion: g('#c-emo'), avant: Number(g('#c-av')), juste: g('#c-jus'), apres: Number(g('#c-ap')) });
+      e.target.reset(); v.querySelector('#o-av').textContent = '7'; v.querySelector('#o-ap').textContent = '5';
+      v.querySelector('#c-ok').textContent = 'Ajouté. Même un petit changement compte.'; dessinerCarnet();
+    });
+    dessinerCarnet();
+
+    // Plan de crise
+    const P = [['sig', 'signaux'], ['apa', 'apaisants'], ['pers', 'personnes'], ['soin', 'soignants']];
+    const pl = plan.lire();
+    P.forEach(([id, k]) => { v.querySelector('#p-' + id).value = pl[k] || ''; });
+    v.querySelector('#fp').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const o = {}; P.forEach(([id, k]) => { o[k] = v.querySelector('#p-' + id).value.trim(); });
+      plan.ecrire(o); v.querySelector('#p-ok').textContent = 'Plan enregistré sur cet appareil.';
+    });
+
     dessinerGraph(v.querySelector('#graph'));
   };
 
@@ -485,7 +622,7 @@
     evenements: { titre: 'Agenda', cle: 'titre', champs: [['titre', 'Titre', 'text', true], ['type', 'Type', ['Séjour', 'Sortie', 'Groupe de parole', 'Conférence', 'AG', 'Autre']], ['debut', 'Début', 'datetime', true], ['fin', 'Fin', 'datetime'], ['lieu', 'Lieu', 'text'], ['description', 'Description', 'textarea'], ['places', 'Places (vide = sans limite)', 'number'], ['prix', 'Prix (€)', 'number'], ['inscription_ouverte', 'Inscriptions ouvertes', 'check'], ['publie', 'Publié', 'check']] },
     newsletters: { titre: 'Lettres', cle: 'titre', champs: [['titre', 'Titre', 'text', true], ['date_parution', 'Date de parution', 'date', true], ['resume', 'Résumé', 'textarea'], ['url_pdf', 'Lien de lecture (Drive partagé « tous les utilisateurs disposant du lien »)', 'url'], ['publie', 'Publié', 'check']] },
     annuaire: { titre: 'Annuaire', cle: 'nom', champs: [['categorie', 'Catégorie', ['Urgences', 'Soins', 'Associations', "L'association"]], ['nom', 'Nom', 'text', true], ['description', 'Description', 'textarea'], ['telephone', 'Téléphone', 'text'], ['site', 'Site', 'url'], ['ordre', 'Ordre', 'number']] },
-    sophro: { titre: 'Sophrologie', cle: 'titre', champs: [['titre', 'Titre', 'text', true], ['objectif', 'Objectif', 'textarea'], ['duree_min', 'Durée (min)', 'number'], ['rythme', 'Animation de respiration', ['', '4-6', '5-5']], ['etapes', 'Étapes (une par ligne)', 'long'], ['audio_url', "Lien de l'audio (Supabase Storage › audios)", 'url'], ['valide', 'Relu par la sophrologue', 'check'], ['publie', 'Publié', 'check'], ['ordre', 'Ordre', 'number']] },
+    sophro: { titre: 'Exercices', cle: 'titre', champs: [['titre', 'Titre', 'text', true], ['categorie', 'Rubrique', ['Sophrologie et détente', 'Mieux vivre avec']], ['objectif', 'Objectif', 'textarea'], ['duree_min', 'Durée (min)', 'number'], ['rythme', 'Animation de respiration', ['', '4-6', '5-5', '4-4-4-4']], ['etapes', 'Étapes (une par ligne ; [10] en fin de ligne = 10 s de pause après la voix)', 'long'], ['audio_url', "Lien de l'audio enregistré (Supabase Storage › audios)", 'url'], ['valide', 'Relu (sophrologue ou psychologue)', 'check'], ['publie', 'Publié', 'check'], ['ordre', 'Ordre', 'number']] },
   };
 
   function formulaire(t, row, onDone) {
@@ -658,7 +795,7 @@
     if (!moi) return;
     const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
     const k = VUES[parts[0]] ? parts[0] : 'accueil';
-    clearTimeout(souffleTimer);
+    clearTimeout(souffleTimer); guide.stop();
     document.querySelectorAll('.nav a').forEach((a) => { if (a.dataset.k === k) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     const v = document.getElementById('vue');
     try { await VUES[k](v, parts.length ? parts : ['accueil']); }

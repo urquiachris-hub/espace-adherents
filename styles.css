@@ -144,7 +144,11 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .onglets button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 [hidden] { display: none !important; }
 
-.etapes li { padding: 6px 8px; border-radius: 10px; transition: background-color .3s; }
-.etapes li.actif { background: var(--accent-pale); font-weight: 700; }
-.etapes li.actif::before { background: var(--accent); color: var(--bg); }
-.bulle.carre { border-radius: 22px; }
+/* Enregistrement de la voix des exercices (Gestion) */
+.enreg { box-sizing: border-box; max-width: 100%; min-width: 0; display: flex; flex-direction: column; gap: 10px; background: var(--bg); }
+.enreg-temps { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--rouge); }
+.script-lecture { max-height: 55vh; overflow-y: auto; padding: 4px 12px; margin-top: 8px; border-left: 3px solid var(--accent); font-size: 1.12rem; line-height: 1.6; }
+.script-lecture p { margin: 0 0 12px; }
+.script-lecture .silence { font-size: .85rem; font-style: italic; color: var(--fg-2); letter-spacing: .02em; }
+.enreg input[type="file"] { max-width: 100%; width: 100%; font-size: .9rem; }
+.enreg .champ { min-width: 0; }

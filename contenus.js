@@ -156,7 +156,7 @@ Les groupes de parole, les sorties et les séjours de l'association sont faits p
 
   sophro: [
     {
-      id: 's1', ordre: 10, titre: 'Respiration 4-6', duree_min: 5, rythme: '4-6',
+      id: 's1', type: 'Sophrologie', ordre: 10, titre: 'Respiration 4-6', duree_min: 5, rythme: '4-6',
       objectif: "Faire retomber la tension quand l'acouphène devient envahissant.",
       etapes: `Asseyez-vous confortablement, les pieds bien à plat, le dos droit sans être raide.
 Posez une main sur le ventre.
@@ -166,7 +166,7 @@ Suivez le cercle à l'écran pendant 5 minutes.
 Pour finir, reprenez une respiration libre et remarquez ce qui a changé dans votre corps.`,
     },
     {
-      id: 's2', ordre: 20, titre: 'Cohérence cardiaque 5-5', duree_min: 5, rythme: '5-5',
+      id: 's2', type: 'Sophrologie', ordre: 20, titre: 'Cohérence cardiaque 5-5', duree_min: 5, rythme: '5-5',
       objectif: 'Un rendez-vous régulier pour apaiser le stress, idéalement 3 fois par jour.',
       etapes: `Installez-vous assis·e, les épaules relâchées.
 Inspirez pendant 5 secondes en suivant le cercle qui grandit.
@@ -175,7 +175,7 @@ Gardez ce rythme pendant 5 minutes, soit 6 respirations par minute.
 Le matin, avant le déjeuner et en fin d'après-midi sont de bons moments.`,
     },
     {
-      id: 's3', ordre: 30, titre: 'Ancrage dans les appuis', duree_min: 5, rythme: '',
+      id: 's3', type: 'Sophrologie', ordre: 30, titre: 'Ancrage dans les appuis', duree_min: 5, rythme: '',
       objectif: "Ramener l'attention dans le corps, loin du bruit.",
       etapes: `Debout ou assis·e, fermez les yeux si vous le souhaitez.
 Sentez vos pieds sur le sol : le talon, la plante, les orteils.
@@ -186,7 +186,7 @@ Si l'attention repart vers l'acouphène, ramenez-la doucement vers vos appuis, s
 Restez ainsi quelques minutes, puis ouvrez les yeux et reprenez votre activité.`,
     },
     {
-      id: 's4', ordre: 40, titre: 'Balayage du corps', duree_min: 8, rythme: '',
+      id: 's4', type: 'Sophrologie', ordre: 40, titre: 'Balayage du corps', duree_min: 8, rythme: '',
       objectif: 'Relâcher les tensions une à une, par exemple avant de dormir.',
       etapes: `Allongez-vous sur le dos, les bras le long du corps.
 Portez votre attention sur le front : relâchez-le. Puis les yeux, la mâchoire, la langue.
@@ -198,7 +198,7 @@ Prenez conscience du corps entier, détendu, posé.
 Restez ainsi autant que vous le souhaitez.`,
     },
     {
-      id: 's5', ordre: 50, titre: "Changer de point d'écoute", duree_min: 5, rythme: '',
+      id: 's5', type: 'Sophrologie', ordre: 50, titre: "Changer de point d'écoute", duree_min: 5, rythme: '',
       objectif: "Montrer à son attention qu'elle peut se poser ailleurs que sur l'acouphène.",
       etapes: `Asseyez-vous près d'une fenêtre ou dehors.
 Repérez un son lointain : une voiture, un oiseau, le vent. Écoutez-le quelques respirations.
@@ -208,7 +208,7 @@ Votre acouphène fait partie du paysage sonore, comme les autres sons. Laissez-l
 Terminez par trois respirations lentes.`,
     },
     {
-      id: 's6', ordre: 60, titre: 'Lieu ressource', duree_min: 7, rythme: '',
+      id: 's6', type: 'Sophrologie', ordre: 60, titre: 'Lieu ressource', duree_min: 7, rythme: '',
       objectif: "Se construire un refuge intérieur à retrouver quand c'est dur.",
       etapes: `Installez-vous confortablement et fermez les yeux.
 Pensez à un lieu où vous vous sentez bien, réel ou imaginaire : une plage, une forêt, un sommet.
@@ -218,6 +218,180 @@ Remarquez les odeurs, et les sons de ce lieu, doux et familiers.
 Restez-y quelques instants en respirant calmement.
 Avant de revenir, dites-vous que ce lieu reste disponible, à tout moment.
 Bougez doucement les doigts, étirez-vous, ouvrez les yeux.`,
+    },
+    {
+      id: 's7', ordre: 70, type: 'Sophrologie', titre: 'Respiration carrée', duree_min: 3, rythme: '4-4-4-4',
+      objectif: 'Se poser en quelques minutes, au calme ou avant un moment stressant.',
+      etapes: `Installez-vous assis·e, le dos droit, les épaules relâchées. [5]
+Inspirez par le nez en comptant jusqu'à 4. [5]
+Gardez l'air en comptant jusqu'à 4, sans forcer. [5]
+Expirez doucement en comptant jusqu'à 4. [5]
+Restez poumons vides en comptant jusqu'à 4, puis recommencez. [5]
+Suivez le carré à l'écran pendant 3 minutes. Si retenir l'air vous gêne, raccourcissez les pauses. [10]`,
+    },
+    {
+      id: 's8', ordre: 80, type: 'Sophrologie', titre: 'Relâcher les muscles un à un', duree_min: 10, rythme: '',
+      objectif: "Faire baisser la tension physique, idéal avant de dormir.",
+      etapes: `Allongez-vous ou asseyez-vous confortablement. Fermez les yeux si vous le souhaitez. [8]
+Serrez fort les poings pendant 5 secondes. [6]
+Relâchez d'un coup. Sentez la différence entre la tension et la détente. [12]
+Remontez les épaules vers les oreilles, tenez 5 secondes. [6]
+Relâchez. Laissez les épaules descendre. [12]
+Serrez la mâchoire et plissez le visage, 5 secondes. [6]
+Relâchez la mâchoire, le front, les yeux. [12]
+Contractez le ventre, 5 secondes. [6]
+Relâchez et respirez dans le ventre. [12]
+Serrez les cuisses et les fessiers, 5 secondes. [6]
+Relâchez. [12]
+Pointez les pieds vers vous, contractez les mollets, 5 secondes. [6]
+Relâchez. Sentez tout le corps lourd et détendu. [20]
+Restez dans cette détente aussi longtemps que vous le souhaitez. [15]`,
+    },
+    {
+      id: 's9', ordre: 90, type: 'Sophrologie', titre: 'Évacuer les tensions de la journée', duree_min: 6, rythme: '',
+      objectif: 'Une sophrologie en mouvement pour se débarrasser du stress accumulé.',
+      etapes: `Debout, pieds écartés de la largeur du bassin, bras le long du corps. [6]
+Inspirez par le nez et retenez l'air. [4]
+Pendant que vous retenez l'air, haussez plusieurs fois les épaules vers les oreilles. [6]
+Expirez par la bouche en relâchant d'un coup les épaules, comme si vous laissiez tomber un sac trop lourd. [8]
+Accueillez les sensations dans les épaules et la nuque. [10]
+Recommencez deux fois. [25]
+Maintenant, tournez doucement la tête de droite à gauche, sans forcer, sur une respiration calme. [20]
+Revenez au centre. Respirez librement. [10]
+Remarquez ce qui a changé dans votre corps, sans juger. [12]`,
+    },
+    {
+      id: 's10', ordre: 100, type: 'Sophrologie', titre: 'Le son devient paysage', duree_min: 7, rythme: '',
+      objectif: "Changer de regard sur l'acouphène en l'intégrant à une scène apaisante.",
+      etapes: `Installez-vous confortablement, fermez les yeux. Prenez trois respirations lentes. [15]
+Écoutez votre acouphène quelques instants, sans chercher à le chasser. Remarquez simplement sa hauteur et son rythme. [12]
+Imaginez maintenant un lieu calme qui pourrait produire ce son : le vent dans les pins, une rivière, des cigales en été, la mer au loin. [15]
+Placez-vous dans ce paysage. Voyez les couleurs, la lumière, le ciel. [15]
+Sentez l'air sur votre peau, le sol sous vos pieds. [15]
+Laissez le son faire partie du décor, comme un élément parmi d'autres. [15]
+Respirez tranquillement dans ce paysage. Vous n'avez rien à faire. [25]
+Avant de revenir, dites-vous que ce paysage reste à votre disposition. [8]
+Bougez les doigts, étirez-vous, ouvrez les yeux. [6]`,
+    },
+    {
+      id: 's11', ordre: 110, type: 'Sophrologie', titre: 'Se projeter dans un bon moment', duree_min: 6, rythme: '',
+      objectif: "Nourrir la confiance en se projetant dans un moment agréable à venir.",
+      etapes: `Installez-vous et fermez les yeux. Respirez calmement. [12]
+Pensez à un moment agréable qui vous attend : une sortie, un repas avec des proches, un séjour. [10]
+Imaginez-vous la veille de ce moment. Sentez l'envie, la curiosité. [12]
+Imaginez maintenant le moment lui-même. Où êtes-vous ? Avec qui ? Que voyez-vous ? [15]
+Remarquez que vous vous sentez bien, capable, à votre place. [12]
+Gardez une image ou un mot qui résume ce moment. [10]
+Respirez profondément en accueillant cette image. [10]
+Revenez doucement ici, en gardant ce sentiment avec vous. [8]`,
+    },
+    {
+      id: 's12', ordre: 15, type: 'Sophrologie', titre: 'Pause SOS de 3 minutes', duree_min: 3, rythme: '',
+      objectif: "Quand le bruit prend toute la place : un exercice court pour reprendre pied.",
+      etapes: `Arrêtez ce que vous faites. Posez les deux pieds au sol. [5]
+Nommez trois choses que vous voyez autour de vous. [10]
+Sentez le contact de vos pieds sur le sol, de votre dos sur le siège. [8]
+Inspirez lentement par le nez, en comptant jusqu'à 4. [5]
+Expirez encore plus lentement par la bouche, en comptant jusqu'à 6. [7]
+Encore une fois. Inspirez sur 4. [5]
+Expirez sur 6. [7]
+Une dernière fois. [12]
+Si vous le pouvez, lancez un son doux dans la rubrique Sons, à faible volume. [5]
+Dites-vous : c'est un moment difficile, et il va passer. [8]`,
+    },
+    {
+      id: 't1', ordre: 210, type: 'TCC', titre: 'Comprendre le cercle vicieux', duree_min: 5, rythme: '',
+      objectif: "Comprendre pourquoi la gêne augmente quand on s'inquiète, pour mieux casser le cercle.",
+      etapes: `Le cerveau trie en permanence les sons : il met de côté ceux qui ne sont pas importants. [6]
+Quand un acouphène est vécu comme une menace, le cerveau le classe comme important et le surveille. [6]
+Plus on le surveille, plus on l'entend. Plus on l'entend, plus on s'inquiète. Et plus on s'inquiète, plus il paraît fort. [8]
+La fatigue et le stress renforcent encore ce cercle. [5]
+La bonne nouvelle : on peut agir sur chaque étape. Sur l'inquiétude, avec le carnet des pensées. Sur l'attention, avec l'entraînement de l'attention. Sur le stress, avec la respiration et la relaxation. [8]
+Le but n'est pas de faire disparaître le son, mais qu'il redevienne un bruit de fond, comme le ronronnement d'un frigo. [8]
+Prenez un moment pour repérer votre propre cercle : qu'est-ce qui augmente votre gêne, et qu'est-ce qui l'apaise ? Notez-le dans votre journal. [15]`,
+    },
+    {
+      id: 't2', ordre: 220, type: 'TCC', titre: 'Le carnet des pensées', duree_min: 10, rythme: '',
+      objectif: "Repérer les pensées qui augmentent la détresse et trouver des pensées plus justes.",
+      etapes: `Pensez à un moment récent où l'acouphène vous a pesé. [10]
+Décrivez la situation en une phrase : où étiez-vous, que faisiez-vous ? [12]
+Quelle pensée vous a traversé l'esprit ? Par exemple : ça ne s'arrêtera jamais, je vais devenir fou, je ne vais pas dormir. [12]
+Quelle émotion avez-vous ressentie, et à quelle intensité, sur 10 ? [10]
+Maintenant, interrogez cette pensée. Est-elle tout à fait vraie ? Avez-vous déjà vécu des moments où c'était moins fort ? [15]
+Que diriez-vous à un ami qui aurait cette pensée ? [12]
+Formulez une pensée plus juste. Par exemple : c'est difficile ce soir, mais j'ai déjà réussi à m'endormir malgré le bruit. [15]
+Notez l'émotion à nouveau, sur 10. Même un petit changement compte. [8]
+Vous pouvez remplir ce carnet dans la rubrique Journal, partie Carnet des pensées. [5]`,
+    },
+    {
+      id: 't3', ordre: 230, type: 'TCC', titre: 'Prendre de la distance avec ses pensées', duree_min: 5, rythme: '',
+      objectif: "Ne plus se laisser emporter par les pensées négatives liées au bruit.",
+      etapes: `Choisissez une pensée qui revient souvent, par exemple : je n'en peux plus de ce bruit. [8]
+Répétez-la intérieurement quelques secondes. Remarquez l'effet qu'elle a sur vous. [10]
+Maintenant, ajoutez devant : j'ai la pensée que… je n'en peux plus de ce bruit. [8]
+Puis : je remarque que j'ai la pensée que… je n'en peux plus de ce bruit. [8]
+Sentez la petite distance qui s'installe. La pensée est là, mais vous n'êtes pas la pensée. [12]
+Imaginez cette pensée écrite sur une feuille qui flotte sur une rivière, et laissez-la passer. [15]
+Revenez à votre respiration, et à ce qui compte pour vous aujourd'hui. [10]`,
+    },
+    {
+      id: 't4', ordre: 240, type: 'TCC', titre: "Entraîner son attention", duree_min: 8, rythme: '',
+      objectif: "Apprendre à déplacer son attention volontairement, pour que l'acouphène ne la capte plus en permanence.",
+      etapes: `Asseyez-vous dans un endroit où l'on entend plusieurs sons : une fenêtre ouverte, une pièce avec un bruit de fond. [8]
+Repérez trois sons différents en plus de l'acouphène, par exemple une voiture, un oiseau, le frigo. [12]
+Concentrez-vous sur le premier son, uniquement sur lui, pendant 10 secondes. [10]
+Passez au deuxième son, 10 secondes. [10]
+Puis au troisième, 10 secondes. [10]
+Maintenant, changez de son plus vite : 5 secondes chacun. Premier son. [5]
+Deuxième. [5]
+Troisième. [5]
+Enfin, essayez d'écouter tous les sons en même temps, comme un paysage sonore. [20]
+Si l'acouphène revient au premier plan, c'est normal : ramenez simplement votre attention vers les autres sons. [8]
+Pratiqué chaque jour, cet exercice rend l'attention plus souple. [5]`,
+    },
+    {
+      id: 't5', ordre: 250, type: 'TCC', titre: 'Retrouver les activités qui font du bien', duree_min: 10, rythme: '',
+      objectif: "Ne plus laisser l'acouphène réduire votre vie : réintroduire pas à pas ce qui vous fait du bien.",
+      etapes: `Pensez aux activités que vous aimiez et que vous faites moins depuis vos acouphènes : marcher, voir des amis, bricoler, lire, faire du sport. [12]
+Choisissez-en une seule, simple et réaliste cette semaine. [10]
+Décidez quand : quel jour, à quelle heure, combien de temps. [10]
+Prévoyez ce qui pourrait vous aider : un fond sonore, des bouchons si c'est bruyant, quelqu'un pour vous accompagner. [10]
+Après l'activité, notez dans votre journal le plaisir ressenti sur 10, et la gêne de l'acouphène sur 10. [8]
+Souvent, on remarque que la gêne est plus faible quand on est occupé par quelque chose d'agréable. [6]
+La semaine suivante, ajoutez une activité. Avancez à petits pas. [6]`,
+    },
+    {
+      id: 't6', ordre: 260, type: 'TCC', titre: 'Sortir du silence total', duree_min: 5, rythme: '',
+      objectif: "Le silence complet rend l'acouphène plus présent : retrouver un environnement sonore doux.",
+      etapes: `Dans le silence, le cerveau tend l'oreille, et l'acouphène ressort davantage. [6]
+À l'inverse, couvrir totalement l'acouphène empêche le cerveau de s'y habituer. [6]
+Le juste milieu : un fond sonore doux, réglé un peu en dessous de votre acouphène. [6]
+Repérez les moments de silence de votre journée : le soir, la nuit, le bureau calme. [10]
+Pour chacun, choisissez un fond sonore : radio douce, fenêtre entrouverte, ou un son de la rubrique Sons. [10]
+Essayez pendant une semaine, puis notez dans votre journal si la gêne a évolué. [6]
+Gardez les protections auditives pour les bruits forts seulement, pas pour le quotidien. [6]`,
+    },
+    {
+      id: 't7', ordre: 270, type: 'TCC', titre: 'Mieux dormir', duree_min: 5, rythme: '',
+      objectif: "Des habitudes simples qui aident à retrouver un meilleur sommeil malgré l'acouphène.",
+      etapes: `Gardez des heures de coucher et de lever régulières, même le week-end. [6]
+Réservez le lit au sommeil : évitez d'y regarder les écrans ou d'y ruminer. [6]
+Une heure avant de dormir, baissez la lumière et choisissez une activité calme. [6]
+Lancez un fond sonore doux pour la nuit, avec l'arrêt automatique. [6]
+Si vous ne dormez pas au bout d'une vingtaine de minutes, levez-vous. Faites quelque chose de calme dans une autre pièce, et revenez quand le sommeil arrive. [8]
+Évitez le café après midi, l'alcool le soir, et les siestes de plus de 20 minutes. [6]
+Si les difficultés de sommeil durent, parlez-en à votre médecin : elles se soignent. [6]`,
+    },
+    {
+      id: 't8', ordre: 280, type: 'TCC', titre: 'Mon plan de crise', duree_min: 10, rythme: '',
+      objectif: "Préparer à l'avance ce que vous ferez quand l'acouphène devient insupportable.",
+      etapes: `Prenez un moment calme pour préparer votre plan. Il servira les jours difficiles. [8]
+Repérez vos signaux d'alerte : fatigue, irritabilité, isolement, pensées noires. [12]
+Listez trois choses qui vous apaisent rapidement : un exercice de respiration, un son doux, une marche, une douche chaude. [15]
+Listez deux personnes que vous pouvez appeler ou à qui écrire. [12]
+Notez le contact de votre médecin ou de votre ORL. [8]
+Si un jour vous avez des idées suicidaires, appelez le 3114, gratuit, 24 heures sur 24. En cas d'urgence, le 15 ou le 112. [8]
+Vous pouvez enregistrer votre plan dans la rubrique Journal, partie Mon plan de crise, pour l'avoir toujours sous la main. [6]`,
     },
   ],
 

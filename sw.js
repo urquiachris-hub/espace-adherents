@@ -1,5 +1,5 @@
 /* Garde l'application disponible hors connexion (sons, respiration, journal). */
-const V = 'aa-v4';
+const V = 'aa-v5';
 const FICHIERS = ['./', 'index.html', 'styles.css', 'config.js', 'contenus.js', 'sons.js', 'voix.js', 'scripts.js', 'app.js', 'icon.svg', 'manifest.webmanifest'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(V).then((c) => c.addAll(FICHIERS)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== V).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });

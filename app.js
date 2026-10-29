@@ -307,11 +307,9 @@
     stopB.addEventListener('click', () => { window.AASons.stop(); window.AASons.minuterie(0, tick); v.querySelectorAll('.son').forEach((x) => x.setAttribute('aria-pressed', 'false')); stopB.disabled = true; });
   };
 
-  let souffleTimer = null, guideSon = false;
+  let souffleTimer = null;
   function arreterGuidage() {
     clearTimeout(souffleTimer);
-    if (window.AAVoix) window.AAVoix.stop();
-    if (guideSon) { window.AASons.stop(); guideSon = false; }
     if (window.__aaWake) { try { window.__aaWake.release(); } catch (e) {} window.__aaWake = null; }
   }
   async function garderEcran() { try { if (navigator.wakeLock) window.__aaWake = await navigator.wakeLock.request('screen'); } catch (e) {} }
@@ -326,34 +324,16 @@
       const rythme = r.length === 2 || r.length === 4 ? r : null;
       v.innerHTML = `<a href="#/sophro" class="petit">← Tous les exercices</a>
         <header><div class="sur-titre">${esc(s.type === 'TCC' ? 'Inspiré des TCC' : 'Sophrologie')} · ${esc(s.duree_min || '')} min ${s.valide ? '' : '· <span class="chip rouge">En attente de relecture</span>'}</div><h1>${esc(s.titre)}</h1><p class="muet">${esc(s.objectif || '')}</p></header>
-        <div class="carte form">
-          <div class="sur-titre">Version guidée</div>
-          ${safeAudio(s.audio_url) ? `<audio controls preload="none" src="${esc(s.audio_url)}" style="width:100%"></audio><p class="muet petit" style="margin:0">Version enregistrée. Ou bien, la voix de synthèse :</p>` : ''}
-          ${window.AAVoix.ok ? `<div class="actions"><button type="button" class="btn" id="guide">Écouter l'exercice guidé</button></div>
-          <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="fond"> Ajouter un fond sonore doux (bruit rose)</label>
-          <p class="muet petit" style="margin:0" id="g-etat" aria-live="polite">Voix de synthèse de votre téléphone. Montez le volume ; sur iPhone, vérifiez le mode silencieux.</p>` : '<p class="muet petit">Votre navigateur ne propose pas de voix de synthèse. Suivez les étapes écrites ci-dessous.</p>'}
-        </div>
-        ${rythme ? `<div class="carte souffle"><div class="bulle" id="bulle">Prêt·e ?</div><div class="actions"><button type="button" class="btn secondaire" id="go">Respiration guidée</button></div><label style="display:flex;gap:8px;align-items:center;font-weight:400" class="petit"><input type="checkbox" id="annonce" ${window.AAVoix.ok ? 'checked' : 'disabled'}> Annonces vocales</label><span class="muet petit" id="cpt" aria-live="polite"></span></div>` : ''}
-        <ol class="etapes" id="etapes">${etapes.map((e, i) => `<li data-i="${i}"><span>${esc(e.texte)}</span></li>`).join('')}</ol>
+        ${safeAudio(s.audio_url) ? `<div class="carte form">
+          <div class="sur-titre">Version audio</div>
+          <audio controls preload="none" src="${esc(s.audio_url)}" style="width:100%"></audio>
+        </div>` : ''}
+        ${rythme ? `<div class="carte souffle"><div class="bulle" id="bulle">Prêt·e ?</div><div class="actions"><button type="button" class="btn secondaire" id="go">Respiration guidée</button></div><span class="muet petit" id="cpt" aria-live="polite"></span></div>` : ''}
+        <ol class="etapes" id="etapes">${etapes.map((e) => `<li><span>${esc(e.texte)}</span></li>`).join('')}</ol>
         <p class="muet petit">${s.type === 'TCC' ? "Exercice d'auto-assistance inspiré des thérapies cognitivo-comportementales. Il ne remplace pas une TCC menée par un professionnel, recommandée par la HAS." : 'Exercice de détente rédigé pour l\'association.'} Arrêtez si vous ressentez un inconfort.</p>`;
-      const lis = [...v.querySelectorAll('#etapes li')];
-      const marquer = (i) => lis.forEach((li, k) => { li.style.fontWeight = k === i ? '700' : ''; li.style.color = k < i ? 'var(--fg-2)' : ''; });
-      const g = v.querySelector('#guide');
-      if (g) {
-        let actif = false;
-        const fin = () => { actif = false; g.textContent = "Écouter l'exercice guidé"; marquer(-1); arreterGuidage(); v.querySelector('#g-etat').textContent = 'Exercice terminé.'; };
-        g.addEventListener('click', () => {
-          if (actif) { fin(); v.querySelector('#g-etat').textContent = 'Guidage arrêté.'; return; }
-          actif = true; g.textContent = 'Arrêter le guidage';
-          if (v.querySelector('#fond').checked) { window.AASons.play('rose', 0.12); guideSon = true; }
-          garderEcran();
-          v.querySelector('#g-etat').textContent = 'Guidage en cours…';
-          window.AAVoix.guider(etapes, { onStep: (i) => { marquer(i); lis[i] && lis[i].scrollIntoView({ block: 'center', behavior: 'smooth' }); }, onFin: fin });
-        });
-      }
       if (rythme) {
         const ph = rythme.length === 2 ? [['Inspirez', rythme[0], 1], ['Expirez', rythme[1], 0.6]] : [['Inspirez', rythme[0], 1], ['Retenez', rythme[1], 1], ['Expirez', rythme[2], 0.6], ['Retenez', rythme[3], 0.6]];
-        const bulle = v.querySelector('#bulle'), go = v.querySelector('#go'), cpt = v.querySelector('#cpt'), ann = v.querySelector('#annonce');
+        const bulle = v.querySelector('#bulle'), go = v.querySelector('#go'), cpt = v.querySelector('#cpt');
         let on = false;
         const arret = () => { clearTimeout(souffleTimer); on = false; go.textContent = 'Respiration guidée'; bulle.textContent = 'Prêt·e ?'; bulle.style.transitionDuration = '1s'; bulle.style.transform = 'scale(.6)'; cpt.textContent = ''; };
         go.addEventListener('click', () => {
@@ -362,10 +342,9 @@
           const finT = Date.now() + (s.duree_min || 5) * 60000;
           const cycle = (k) => {
             if (!on) return;
-            if (Date.now() >= finT) { arret(); bulle.textContent = 'Terminé'; if (ann.checked) window.AAVoix.annoncer('Terminé'); return; }
+            if (Date.now() >= finT) { arret(); bulle.textContent = 'Terminé'; return; }
             const [mot, d, sc] = ph[k % ph.length];
             bulle.style.transitionDuration = d + 's'; bulle.style.transform = `scale(${sc})`; bulle.textContent = mot;
-            if (ann && ann.checked) window.AAVoix.annoncer(mot);
             cpt.textContent = `Encore ${Math.ceil((finT - Date.now()) / 60000)} min`;
             souffleTimer = setTimeout(() => cycle(k + 1), d * 1000);
           };
@@ -381,7 +360,7 @@
       v.querySelector('#note-t').hidden = onglet !== 'TCC';
       v.querySelector('#liste-s').innerHTML = l.map((s) => `<a class="lien-carte" href="#/sophro/${esc(s.id)}"><div class="carte"><div class="entete"><h2>${esc(s.titre)}</h2><span class="chip">${esc(s.duree_min || '')} min</span></div><p class="muet petit" style="margin:6px 0 0">${esc(s.objectif || '')}</p></div></a>`).join('') || '<p class="muet">Aucun exercice pour l\'instant.</p>';
     };
-    v.innerHTML = `<h1>Souffler</h1><p class="muet">Des exercices guidés par la voix, pour relâcher la tension et changer de regard sur l'acouphène.</p>
+    v.innerHTML = `<h1>Souffler</h1><p class="muet">Des exercices pour relâcher la tension et changer de regard sur l'acouphène.</p>
       <div class="onglets"><button type="button" data-t="Sophrologie">Sophrologie et détente</button><button type="button" data-t="TCC">Mieux vivre avec (TCC)</button></div>
       <p class="alerte petit" id="note-t" hidden>Ces exercices d'auto-assistance s'inspirent des thérapies cognitivo-comportementales (TCC). Ils complètent mais ne remplacent pas une TCC avec un professionnel : parlez-en à votre médecin.</p>
       <div class="liste" id="liste-s"></div>`;
@@ -630,7 +609,7 @@
     evenements: { titre: 'Agenda', cle: 'titre', champs: [['titre', 'Titre', 'text', true], ['type', 'Type', ['Séjour', 'Sortie', 'Groupe de parole', 'Conférence', 'AG', 'Autre']], ['debut', 'Début', 'datetime', true], ['fin', 'Fin', 'datetime'], ['lieu', 'Lieu', 'text'], ['description', 'Description', 'textarea'], ['places', 'Places (vide = sans limite)', 'number'], ['prix', 'Prix (€)', 'number'], ['inscription_ouverte', 'Inscriptions ouvertes', 'check'], ['publie', 'Publié', 'check']] },
     newsletters: { titre: 'Lettres', cle: 'titre', champs: [['titre', 'Titre', 'text', true], ['date_parution', 'Date de parution', 'date', true], ['resume', 'Résumé', 'textarea'], ['url_pdf', 'Lien de lecture (Drive partagé « tous les utilisateurs disposant du lien »)', 'url'], ['publie', 'Publié', 'check']] },
     annuaire: { titre: 'Annuaire', cle: 'nom', champs: [['categorie', 'Catégorie', ['Urgences', 'Soins', 'Associations', "L'association"]], ['nom', 'Nom', 'text', true], ['description', 'Description', 'textarea'], ['telephone', 'Téléphone', 'text'], ['site', 'Site', 'url'], ['ordre', 'Ordre', 'number']] },
-    sophro: { titre: 'Exercices', cle: 'titre', champs: [['titre', 'Titre', 'text', true], ['type', 'Catégorie', ['Sophrologie', 'TCC']], ['objectif', 'Objectif', 'textarea'], ['duree_min', 'Durée (min)', 'number'], ['rythme', 'Animation de respiration', ['', '4-6', '5-5', '4-4-4-4']], ['etapes', 'Étapes (une par ligne ; [12] en fin de ligne = 12 s de pause pour la voix)', 'long'], ['audio_url', "Lien de l'audio (Supabase Storage › audios)", 'url'], ['valide', 'Relu par la sophrologue', 'check'], ['publie', 'Publié', 'check'], ['ordre', 'Ordre', 'number']] },
+    sophro: { titre: 'Exercices', cle: 'titre', champs: [['titre', 'Titre', 'text', true], ['type', 'Catégorie', ['Sophrologie', 'TCC']], ['objectif', 'Objectif', 'textarea'], ['duree_min', 'Durée (min)', 'number'], ['rythme', 'Animation de respiration', ['', '4-6', '5-5', '4-4-4-4']], ['etapes', 'Étapes (une par ligne)', 'long'], ['audio_url', "Lien de l'audio (Supabase Storage › audios)", 'url'], ['valide', 'Relu par la sophrologue', 'check'], ['publie', 'Publié', 'check'], ['ordre', 'Ordre', 'number']] },
   };
 
   function formulaire(t, row, onDone) {
@@ -693,9 +672,9 @@
     const champUrl = form.querySelector('#f-sophro-audio_url');
     const afficherActuel = () => {
       const u = safeAudio(champUrl.value);
-      $('#r-actuel').innerHTML = u ? `<p class="petit" style="margin:0 0 6px">Enregistrement actuel :</p><audio controls preload="none" src="${esc(u)}" style="width:100%"></audio><div class="actions"><button type="button" class="lien-btn" id="r-del">Retirer cet enregistrement</button></div>` : '<p class="petit muet" style="margin:0">Pas encore d\'enregistrement : les adhérents entendent la voix de synthèse.</p>';
+      $('#r-actuel').innerHTML = u ? `<p class="petit" style="margin:0 0 6px">Enregistrement actuel :</p><audio controls preload="none" src="${esc(u)}" style="width:100%"></audio><div class="actions"><button type="button" class="lien-btn" id="r-del">Retirer cet enregistrement</button></div>` : '<p class="petit muet" style="margin:0">Pas encore d\'enregistrement : les adhérents suivent les étapes écrites.</p>';
       const d = $('#r-del');
-      if (d) d.addEventListener('click', async () => { if (!d.dataset.ok) { d.dataset.ok = '1'; d.textContent = 'Confirmer : revenir à la voix de synthèse'; return; } champUrl.value = ''; await sauver(''); });
+      if (d) d.addEventListener('click', async () => { if (!d.dataset.ok) { d.dataset.ok = '1'; d.textContent = 'Confirmer le retrait'; return; } champUrl.value = ''; await sauver(''); });
     };
     const sauver = async (url) => {
       champUrl.value = url;

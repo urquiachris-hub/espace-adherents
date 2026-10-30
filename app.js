@@ -198,6 +198,7 @@
 
   // ---------- état ----------
   let api = null, moi = null;
+  const gere = () => ['admin', 'sophrologue'].includes(moi?.role);
   const cache = {};
   async function data(t, force) { if (force || !cache[t]) cache[t] = await api.lister(t); return cache[t]; }
   const oublier = (...t) => t.forEach((x) => delete cache[x]);
@@ -210,7 +211,7 @@
 
   function coquille() {
     const items = [...NAV];
-    if (moi.role === 'admin') items.splice(items.length - 1, 0, ['admin', 'Gestion', 'nav-2']);
+    if (gere()) items.splice(items.length - 1, 0, ['admin', 'Gestion', 'nav-2']);
     root.innerHTML = `${api.demo ? '<div class="demo-bandeau">Démonstration : les données restent dans ce navigateur, aucun mail n\'est envoyé.</div>' : ''}
       <div class="app">
         <nav class="nav" aria-label="Navigation principale">
@@ -249,7 +250,7 @@
 
   VUES.plus = async (v) => {
     const items = NAV.filter(([, , c]) => c === 'nav-2');
-    if (moi.role === 'admin') items.push(['admin', 'Gestion', '']);
+    if (gere()) items.push(['admin', 'Gestion', '']);
     v.innerHTML = `<h1>Plus</h1><div class="liste">${items.map(([k, l]) => `<a class="tuile" style="min-height:0;flex-direction:row;align-items:center;gap:12px" href="#/${k}">${ico(k)}<strong>${l}</strong></a>`).join('')}</div>`;
   };
 
@@ -604,6 +605,7 @@
   };
 
   // ---------- gestion (admin) ----------
+  const ROLES = [['adherent', 'Adhérent'], ['sophrologue', 'Sophrologue'], ['admin', 'Admin']];
   const SCHEMAS = {
     articles: { titre: 'Articles', cle: 'titre', champs: [['titre', 'Titre', 'text', true], ['categorie', 'Catégorie', ['Comprendre', 'Se soigner', 'Au quotidien', 'Vivre avec', 'Actualités']], ['resume', 'Résumé', 'textarea'], ['contenu', 'Texte (## pour un intertitre, - pour une liste)', 'long'], ['source_nom', 'Source', 'text'], ['source_url', 'Lien de la source', 'url'], ['ordre', 'Ordre', 'number'], ['publie', 'Publié', 'check']] },
     evenements: { titre: 'Agenda', cle: 'titre', champs: [['titre', 'Titre', 'text', true], ['type', 'Type', ['Séjour', 'Sortie', 'Groupe de parole', 'Conférence', 'AG', 'Autre']], ['debut', 'Début', 'datetime', true], ['fin', 'Fin', 'datetime'], ['lieu', 'Lieu', 'text'], ['description', 'Description', 'textarea'], ['places', 'Places (vide = sans limite)', 'number'], ['prix', 'Prix (€)', 'number'], ['inscription_ouverte', 'Inscriptions ouvertes', 'check'], ['publie', 'Publié', 'check']] },
@@ -623,7 +625,7 @@
       const it = type === 'datetime' ? 'datetime-local' : type;
       const v2 = type === 'datetime' ? toLocalInput(val) : val;
       return `<div class="champ"><label for="${id}">${l}</label><input id="${id}" name="${k}" type="${it}" value="${esc(v2)}" ${req ? 'required' : ''} ${type === 'number' ? 'step="any"' : ''}></div>`;
-    }).join('') + `<div class="actions"><button class="btn" type="submit">Enregistrer</button><button class="btn secondaire" type="button" data-x>Annuler</button>${row.id ? '<button class="btn secondaire" type="button" data-del>Supprimer</button>' : ''}</div><p class="petit err" style="color:var(--rouge)"></p>`;
+    }).join('') + `<div class="actions"><button class="btn" type="submit">Enregistrer</button><button class="btn secondaire" type="button" data-x>Annuler</button>${row.id && moi.role === 'admin' ? '<button class="btn secondaire" type="button" data-del>Supprimer</button>' : ''}</div><p class="petit err" style="color:var(--rouge)"></p>`;
     if (t === 'sophro') f.querySelector(`#f-sophro-audio_url`).closest('.champ').after(enregistreur(row, f));
     f.querySelector('[data-x]').addEventListener('click', () => onDone(false));
     const del = f.querySelector('[data-del]');
@@ -739,9 +741,12 @@
       .filter((r) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(r.email) && !vus.has(r.email) && vus.add(r.email));
   }
 
-  VUES.admin = async (v, [, onglet = 'membres']) => {
-    if (moi.role !== 'admin') { v.innerHTML = '<p>Réservé à la gestion.</p>'; return; }
-    const ONG = [['membres', 'Adhérents'], ['inscrits', 'Inscrits'], ['idees', 'Boîte à idées'], ['moderation', 'Modération'], ...Object.entries(SCHEMAS).map(([k, s]) => [k, s.titre])];
+  VUES.admin = async (v, [, onglet]) => {
+    if (!gere()) { v.innerHTML = '<p>Réservé à la gestion.</p>'; return; }
+    // La sophrologue ne voit que les exercices
+    const admin = moi.role === 'admin';
+    onglet = admin ? onglet || 'membres' : 'sophro';
+    const ONG = admin ? [['membres', 'Adhérents'], ['inscrits', 'Inscrits'], ['idees', 'Boîte à idées'], ['moderation', 'Modération'], ...Object.entries(SCHEMAS).map(([k, s]) => [k, s.titre])] : [['sophro', SCHEMAS.sophro.titre]];
     v.innerHTML = `<h1>Gestion</h1><div class="onglets">${ONG.map(([k, l]) => `<button type="button" data-o="${k}" aria-pressed="${k === onglet}">${l}</button>`).join('')}</div><div id="adm" class="liste"></div>`;
     v.querySelectorAll('[data-o]').forEach((b) => b.addEventListener('click', () => { location.hash = '#/admin/' + b.dataset.o; }));
     const box = v.querySelector('#adm');
@@ -759,7 +764,7 @@
           <div class="champ"><label for="m-e">Mail</label><input id="m-e" type="email"></div>
           <div class="actions"><button type="button" class="btn" id="m-add">Ajouter</button></div><p class="petit" id="m-res" style="color:var(--rouge)"></p></div>
         <div class="carte"><h2>${actifs.length} adhérent${actifs.length > 1 ? 's' : ''} avec accès</h2><div class="tableau"><table><thead><tr><th>Nom</th><th>Mail</th><th>Jusqu'au</th><th>Rôle</th><th></th></tr></thead><tbody>
-          ${m.map((x) => `<tr data-e="${esc(x.email)}"><td>${esc(x.prenom || '')} ${esc(x.nom || '')}</td><td>${esc(x.email)}</td><td>${esc(x.valide_jusqu ? fDate(x.valide_jusqu, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—')}</td><td>${esc(x.role)}</td><td><button type="button" class="lien-btn" data-t>${x.actif ? 'Retirer l\'accès' : 'Rendre l\'accès'}</button></td></tr>`).join('')}
+          ${m.map((x) => `<tr data-e="${esc(x.email)}"><td>${esc(x.prenom || '')} ${esc(x.nom || '')}</td><td>${esc(x.email)}</td><td>${esc(x.valide_jusqu ? fDate(x.valide_jusqu, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—')}</td><td>${x.email === moi.email ? esc(x.role) : `<select data-r aria-label="Rôle">${ROLES.map(([r, l]) => `<option value="${r}" ${r === x.role ? 'selected' : ''}>${l}</option>`).join('')}</select>`}</td><td><button type="button" class="lien-btn" data-t>${x.actif ? 'Retirer l\'accès' : 'Rendre l\'accès'}</button></td></tr>`).join('')}
         </tbody></table></div></div>`;
       let lu = [];
       box.querySelector('#prev').addEventListener('click', () => {
@@ -780,6 +785,10 @@
         try { await api.enregistrer('membres', { email, prenom: box.querySelector('#m-p').value.trim() || null, nom: box.querySelector('#m-n').value.trim() || null, actif: true, role: 'adherent', valide_jusqu: C.finAdhesion || '2027-08-31' }); oublier('membres'); render(); }
         catch (err) { box.querySelector('#m-res').textContent = err.message; }
       });
+      box.querySelectorAll('[data-r]').forEach((sel) => sel.addEventListener('change', async () => {
+        const x = m.find((r) => r.email === sel.closest('tr').dataset.e);
+        await api.enregistrer('membres', { ...x, role: sel.value }); oublier('membres'); render();
+      }));
       box.querySelectorAll('[data-t]').forEach((b) => b.addEventListener('click', async () => {
         const x = m.find((r) => r.email === b.closest('tr').dataset.e);
         if (x.email === moi.email) return;
@@ -833,8 +842,8 @@
     const S = SCHEMAS[onglet]; if (!S) return;
     const rows = await data(onglet, true);
     const liste = () => {
-      box.innerHTML = `<div class="actions"><button type="button" class="btn" id="add">Ajouter</button></div>` + rows.map((r) => `<button type="button" class="carte" data-id="${esc(r.id)}" style="text-align:left;cursor:pointer;font:inherit;color:inherit"><div class="entete"><strong>${esc(r[S.cle])}</strong>${r.publie === false ? '<span class="chip rouge">Brouillon</span>' : ''}${onglet === 'sophro' && !r.valide ? '<span class="chip">À relire</span>' : ''}${onglet === 'sophro' && r.audio_url ? '<span class="chip vert">Voix enregistrée</span>' : ''}</div></button>`).join('');
-      box.querySelector('#add').addEventListener('click', () => ouvrir({}));
+      box.innerHTML = (admin ? `<div class="actions"><button type="button" class="btn" id="add">Ajouter</button></div>` : '') + rows.map((r) => `<button type="button" class="carte" data-id="${esc(r.id)}" style="text-align:left;cursor:pointer;font:inherit;color:inherit"><div class="entete"><strong>${esc(r[S.cle])}</strong>${r.publie === false ? '<span class="chip rouge">Brouillon</span>' : ''}${onglet === 'sophro' && !r.valide ? '<span class="chip">À relire</span>' : ''}${onglet === 'sophro' && r.audio_url ? '<span class="chip vert">Voix enregistrée</span>' : ''}</div></button>`).join('');
+      box.querySelector('#add')?.addEventListener('click', () => ouvrir({}));
       box.querySelectorAll('[data-id]').forEach((b) => b.addEventListener('click', () => ouvrir(rows.find((r) => r.id === b.dataset.id))));
     };
     const ouvrir = (row) => { box.replaceChildren(formulaire(onglet, row, (chg) => { if (chg) render(); else liste(); })); box.querySelector('input,textarea,select')?.focus(); };

@@ -163,3 +163,26 @@ window.AASons = (() => {
   }
   new MutationObserver(ajouter).observe(document.documentElement, { childList: true, subtree: true });
 })();
+
+/* Pastille « son en cours · Arrêter » visible sur toutes les pages sauf Sons,
+   pour couper une ambiance sans revenir dans l'onglet Sons. */
+(() => {
+  const NOMS = { rose: 'Bruit rose', brun: 'Bruit brun', blanc: 'Bruit blanc', pluie: 'Pluie', ocean: 'Océan', delta: 'Endormissement', theta: 'Apaiser l’anxiété', alpha: 'Calme éveillé' };
+  let pastille = null, coupeA = 0;
+  function maj() {
+    const k = window.AASons.enCours();
+    if (!k || location.hash.startsWith('#/sons') || Date.now() - coupeA < 2500) { if (pastille) pastille.style.display = 'none'; return; }
+    if (!pastille) {
+      pastille = document.createElement('div');
+      pastille.id = 'aa-son-en-cours'; pastille.setAttribute('role', 'status');
+      pastille.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 10px);z-index:30;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;border-radius:999px;background:var(--fg);color:var(--bg);box-shadow:0 4px 14px rgba(0,0,0,.2);font-size:.9rem;white-space:nowrap;max-width:calc(100% - 24px)';
+      pastille.innerHTML = '<span></span><button type="button" style="border:0;border-radius:999px;padding:7px 14px;background:var(--accent);color:var(--accent-fg, #fff);font:inherit;font-weight:700;cursor:pointer">Arrêter</button>';
+      pastille.querySelector('button').addEventListener('click', () => { coupeA = Date.now(); window.AASons.stop(0.6); window.AASons.minuterie(0); pastille.style.display = 'none'; });
+      document.body.appendChild(pastille);
+    }
+    pastille.querySelector('span').textContent = '🔊 ' + (NOMS[k] || 'Son') + ' en cours';
+    pastille.style.display = 'flex';
+  }
+  setInterval(maj, 700);
+  window.addEventListener('hashchange', maj);
+})();

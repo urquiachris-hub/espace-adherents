@@ -6,3 +6,14 @@ window.AAVoix = (() => {
   }
   return { lireEtapes };
 })();
+
+/* Arrêter la respiration guidée coupe aussi l'enregistrement audio de l'exercice,
+   et changer de page coupe tout enregistrement en cours. */
+(() => {
+  const couper = () => document.querySelectorAll('audio').forEach((a) => { try { a.pause(); } catch (e) {} });
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest && e.target.closest('#go');
+    if (b && b.textContent.trim() === 'Arrêter') couper();
+  }, true);
+  window.addEventListener('hashchange', couper);
+})();

@@ -827,7 +827,10 @@
       box.querySelectorAll('form[data-s]').forEach((f) => {
         f.addEventListener('submit', async (e) => {
           e.preventDefault();
-          try { await api.repondre(f.dataset.s, f.elements.statut.value, f.elements.reponse.value.trim()); f.querySelector('.ok-msg').textContent = 'Enregistré.'; setTimeout(render, 700); }
+          const rep = f.elements.reponse.value.trim();
+          let st = f.elements.statut.value;
+          if (st === 'Nouveau' && rep) st = 'Lu'; // une réponse envoyée = message traité, il ne reste pas « nouveau »
+          try { await api.repondre(f.dataset.s, st, rep); f.querySelector('.ok-msg').textContent = 'Enregistré.'; setTimeout(render, 700); }
           catch (err) { f.querySelector('.ok-msg').textContent = err.message; }
         });
         const d = f.querySelector('[data-del]');

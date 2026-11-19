@@ -59,6 +59,7 @@
     admin: '<path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/>',
     idees: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
   };
+  ICONES.infos = ICONES.articles;
   const ico = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONES[n] || ''}</svg>`;
   const LOGO = '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="var(--fg)"/><path d="M8 31l9-12 6 8 4-5 13 9" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><path d="M14 16c3-3 7-3 10 0M18 12c4-4 10-4 14 0" fill="none" stroke="var(--bg)" stroke-width="2.4" stroke-linecap="round"/></svg>';
 
@@ -204,9 +205,9 @@
   const oublier = (...t) => t.forEach((x) => delete cache[x]);
 
   const NAV = [
-    ['accueil', 'Accueil', ''], ['articles', 'Lire', ''], ['sons', 'Sons', ''], ['sophro', 'Souffler', ''],
+    ['accueil', 'Accueil', ''], ['infos', 'S\'informer', ''], ['sons', 'Sons', ''], ['sophro', 'Souffler', ''],
     ['agenda', 'Agenda', 'nav-2'], ['journal', 'Journal', 'nav-2'], ['echanges', 'Échanges', 'nav-2'],
-    ['idees', 'Boîte à idées', 'nav-2'], ['lettre', 'La lettre', 'nav-2'], ['aide', 'Aide', 'nav-2'], ['compte', 'Mon compte', 'nav-2'], ['plus', 'Plus', 'nav-plus'],
+    ['idees', 'Boîte à idées', 'nav-2'], ['aide', 'Aide', 'nav-2'], ['compte', 'Mon compte', 'nav-2'], ['plus', 'Plus', 'nav-plus'],
   ];
 
   function coquille() {
@@ -236,16 +237,13 @@
       ${nouv ? `<a class="lien-carte" href="#/admin/idees"><div class="alerte">${nouv} nouveau${nouv > 1 ? 'x' : ''} message${nouv > 1 ? 's' : ''} dans la boîte à idées</div></a>` : ''}
       ${prochain ? `<a class="lien-carte" href="#/agenda"><div class="carte"><div class="sur-titre">Prochain rendez-vous</div><h2>${esc(prochain.titre)}</h2><p class="muet">${esc(fDate(prochain.debut, { weekday: 'long', day: 'numeric', month: 'long' }))} · ${esc(prochain.lieu || '')}</p></div></a>` : ''}
       <a class="lien-carte" href="#/journal"><div class="carte"><div class="sur-titre">Mon journal</div><h2>${j ? 'Noté pour aujourd\'hui, merci.' : 'Comment ça va aujourd\'hui ?'}</h2><p class="muet petit">${j ? `Gêne ${j.gene}/10 · sommeil ${j.sommeil}/10` : 'Trente secondes pour suivre votre acouphène, votre sommeil et votre stress.'}</p></div></a>
-      <section class="grille" aria-label="Raccourcis">
-        <a class="tuile" href="#/sons">${ico('sons')}<strong>Sons apaisants</strong><span class="muet petit">Bruit rose, pluie, océan, avec minuterie</span></a>
-        <a class="tuile" href="#/acouphene">${ico('sons')}<strong>Mon acouphène</strong><span class="muet petit">Retrouvez votre son et faites-le écouter</span></a>
-        <a class="tuile" href="#/sophro">${ico('sophro')}<strong>Souffler</strong><span class="muet petit">Respiration et sophrologie guidées</span></a>
-        <a class="tuile" href="#/articles">${ico('articles')}<strong>Comprendre</strong><span class="muet petit">Articles relus et sourcés</span></a>
-        <a class="tuile" href="#/echanges">${ico('echanges')}<strong>Échanges</strong><span class="muet petit">Entre adhérents, en confiance</span></a>
-        <a class="tuile" href="#/idees">${ico('idees')}<strong>Boîte à idées</strong><span class="muet petit">Une idée, une envie, une question ? Écrivez-moi</span></a>
-        <a class="tuile" href="#/lettre">${ico('lettre')}<strong>La lettre</strong><span class="muet petit">Toutes les newsletters</span></a>
-        <a class="tuile" href="#/aide">${ico('aide')}<strong>Trouver de l'aide</strong><span class="muet petit">Urgences, soins, associations</span></a>
+      <section class="grille" aria-label="Raccourcis" style="grid-template-columns:1fr 1fr;gap:10px">
+        <a class="tuile" style="min-height:0;padding:14px" href="#/sons">${ico('sons')}<strong>Sons</strong><span class="muet petit">Bruits apaisants, ondes, mon acouphène</span></a>
+        <a class="tuile" style="min-height:0;padding:14px" href="#/sophro">${ico('sophro')}<strong>Souffler</strong><span class="muet petit">Respiration et sophrologie</span></a>
+        <a class="tuile" style="min-height:0;padding:14px" href="#/infos">${ico('articles')}<strong>S'informer</strong><span class="muet petit">Articles et lettres de l'asso</span></a>
+        <a class="tuile" style="min-height:0;padding:14px" href="#/echanges">${ico('echanges')}<strong>Échanges</strong><span class="muet petit">Entre adhérents, boîte à idées</span></a>
       </section>
+      <a class="lien-carte" href="#/aide"><div class="carte" style="display:flex;align-items:center;gap:12px;padding:12px 16px">${ico('aide')}<div><strong>Trouver de l'aide</strong><div class="muet petit">Urgences, soins, associations</div></div></div></a>
       <p class="muet petit">Cette application ne remplace pas un avis médical. En cas de baisse brutale de l'audition ou de vertiges, consultez le jour même.</p>`;
   };
 
@@ -260,7 +258,7 @@
     if (id) {
       const a = all.find((x) => x.id === id);
       if (!a) { v.innerHTML = '<p>Article introuvable.</p><a href="#/articles">Retour aux articles</a>'; return; }
-      v.innerHTML = `<a href="#/articles" class="petit">← Tous les articles</a>
+      v.innerHTML = `<a href="#/infos" class="petit">← S\'informer</a>
         <article class="prose"><div class="sur-titre">${esc(a.categorie)}</div><h1>${esc(a.titre)}</h1>${a.resume ? `<p class="muet">${esc(a.resume)}</p>` : ''}${md(a.contenu)}</article>
         ${a.source_nom ? `<p class="source">Source : ${safeUrl(a.source_url) ? `<a href="${esc(a.source_url)}" target="_blank" rel="noopener">${esc(a.source_nom)}</a>` : esc(a.source_nom)}. Cet article informe, il ne remplace pas un avis médical.</p>` : ''}`;
       return;
@@ -372,6 +370,19 @@
       <div class="liste" id="liste-s"></div>`;
     v.querySelectorAll('.onglets button').forEach((b) => b.addEventListener('click', () => { onglet = b.dataset.t; store.set('aa_sophro_tab', onglet); draw(); }));
     draw();
+  };
+
+  VUES.infos = async (v) => {
+    let t = store.get('aa_infos_tab', 'articles');
+    v.innerHTML = `<h1>S'informer</h1><div class="onglets" id="inf-o"><button type="button" data-t="articles">Comprendre</button><button type="button" data-t="lettre">La lettre</button></div><div id="inf-c"></div>`;
+    const draw = async () => {
+      v.querySelectorAll('#inf-o button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.t === t)));
+      const c = v.querySelector('#inf-c');
+      await VUES[t](c, [t]);
+      const h = c.querySelector('h1'); if (h) h.remove();
+    };
+    v.querySelectorAll('#inf-o button').forEach((b) => b.addEventListener('click', () => { t = b.dataset.t; store.set('aa_infos_tab', t); draw(); }));
+    await draw();
   };
 
   VUES.lettre = async (v) => {
@@ -557,6 +568,13 @@
   const STATUTS = ['Nouveau', 'Lu', 'En cours', 'Réalisé', 'Pas retenu'];
   const TYPES_IDEE = ['Une idée', "Une envie de sortie ou d'activité", 'Une question', "Un retour sur l'association", 'Autre'];
   const chipStatut = (s, adm) => `<span class="chip${s === 'Réalisé' ? ' vert' : s === 'Pas retenu' ? ' rouge' : ''}">${esc(s === 'Nouveau' && !adm ? 'Envoyé' : s)}</span>`;
+
+  const echangesBase = VUES.echanges;
+  VUES.echanges = async (v, p) => {
+    await echangesBase(v, p);
+    const h = v.querySelector('h1');
+    if (h) h.insertAdjacentHTML('afterend', `<a class="lien-carte" href="#/idees"><div class="carte" style="display:flex;align-items:center;gap:12px;padding:12px 16px">${ico('idees')}<div><strong>Boîte à idées</strong><div class="muet petit">Une idée, une envie, une question ? Écrivez-moi en privé</div></div></div></a>`);
+  };
 
   VUES.idees = async (v) => {
     const l = (await api.suggestions()).filter((x) => moi.role !== 'admin' || x.user_id === api.monId());
@@ -906,7 +924,7 @@
     const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
     const k = VUES[parts[0]] ? parts[0] : 'accueil';
     arreterGuidage();
-    document.querySelectorAll('.nav a').forEach((a) => { if (a.dataset.k === (k === 'acouphene' ? 'sons' : k)) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+    document.querySelectorAll('.nav a').forEach((a) => { if (a.dataset.k === ({ acouphene: 'sons', articles: 'infos', lettre: 'infos' }[k] || k)) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     const v = document.getElementById('vue');
     try { await VUES[k](v, parts.length ? parts : ['accueil']); }
     catch (e) { v.innerHTML = `<div class="alerte erreur">Impossible de charger cette page : ${esc(e.message)}</div>`; }

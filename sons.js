@@ -25,9 +25,9 @@ window.AASons = (() => {
 
   // Ondes de détente : notes graves (150 à 220 Hz), loin des aigus où se situent la plupart des acouphènes.
   const ONDES = {
-    delta: { porteuse: 150, battement: 2.5, bruit: 'brun', niveauBruit: 0.55 },
-    theta: { porteuse: 200, battement: 6, bruit: 'rose', niveauBruit: 0.45 },
-    alpha: { porteuse: 220, battement: 10, bruit: 'rose', niveauBruit: 0.35 },
+    delta: { porteuse: 150, battement: 2.5, bruit: 'brun', niveauBruit: 0.22 },
+    theta: { porteuse: 200, battement: 6, bruit: 'rose', niveauBruit: 0.18 },
+    alpha: { porteuse: 220, battement: 10, bruit: 'rose', niveauBruit: 0.15 },
   };
 
   function buffer(kind) {
@@ -87,7 +87,7 @@ window.AASons = (() => {
       const fusion = ctx.createChannelMerger(2);
       [[onde.porteuse, 0], [onde.porteuse + onde.battement, 1]].forEach(([f, canal]) => {
         const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
-        const g = ctx.createGain(); g.gain.value = 0.14;
+        const g = ctx.createGain(); g.gain.value = 0.24;
         o.connect(g); g.connect(fusion, 0, canal); o.start(); extra.push(o);
       });
       fusion.connect(gain);

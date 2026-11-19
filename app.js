@@ -238,6 +238,7 @@
       <a class="lien-carte" href="#/journal"><div class="carte"><div class="sur-titre">Mon journal</div><h2>${j ? 'Noté pour aujourd\'hui, merci.' : 'Comment ça va aujourd\'hui ?'}</h2><p class="muet petit">${j ? `Gêne ${j.gene}/10 · sommeil ${j.sommeil}/10` : 'Trente secondes pour suivre votre acouphène, votre sommeil et votre stress.'}</p></div></a>
       <section class="grille" aria-label="Raccourcis">
         <a class="tuile" href="#/sons">${ico('sons')}<strong>Sons apaisants</strong><span class="muet petit">Bruit rose, pluie, océan, avec minuterie</span></a>
+        <a class="tuile" href="#/acouphene">${ico('sons')}<strong>Mon acouphène</strong><span class="muet petit">Retrouvez votre son et faites-le écouter</span></a>
         <a class="tuile" href="#/sophro">${ico('sophro')}<strong>Souffler</strong><span class="muet petit">Respiration et sophrologie guidées</span></a>
         <a class="tuile" href="#/articles">${ico('articles')}<strong>Comprendre</strong><span class="muet petit">Articles relus et sourcés</span></a>
         <a class="tuile" href="#/echanges">${ico('echanges')}<strong>Échanges</strong><span class="muet petit">Entre adhérents, en confiance</span></a>
@@ -283,6 +284,7 @@
     let vol = store.get('aa_vol', 0.25), min = store.get('aa_min', 30);
     v.innerHTML = `<h1>Sons apaisants</h1>
       <p class="muet">Un fond sonore doux rend l'acouphène moins présent, surtout le soir. Réglez le volume <strong>en dessous</strong> de votre acouphène : le but n'est pas de le couvrir.</p>
+      <a class="lien-carte" href="#/acouphene"><div class="carte"><span class="chip">Nouveau</span><h2 style="margin-top:8px">Mon acouphène</h2><p class="muet petit" style="margin:6px 0 0">Retrouvez le son que vous entendez et faites-le écouter à vos proches.</p></div></a>
       <div class="sons" role="group" aria-label="Ambiances">${SONS.map(([k, t, d]) => `<button type="button" class="son" data-s="${k}" aria-pressed="${window.AASons.enCours() === k}"><strong>${t}</strong><span class="muet petit">${d}</span></button>`).join('')}</div>
       <div class="carte form">
         <div class="champ"><label for="vol">Volume</label><input id="vol" type="range" min="0.02" max="0.8" step="0.01" value="${vol}"></div>
@@ -308,9 +310,12 @@
     stopB.addEventListener('click', () => { window.AASons.stop(); window.AASons.minuterie(0, tick); v.querySelectorAll('.son').forEach((x) => x.setAttribute('aria-pressed', 'false')); stopB.disabled = true; });
   };
 
+  VUES.acouphene = async (v) => { window.AAAcouphene.monter(v); };
+
   let souffleTimer = null;
   function arreterGuidage() {
     clearTimeout(souffleTimer);
+    try { window.AAAcouphene && window.AAAcouphene.arreter(); } catch (e) {}
     if (window.__aaWake) { try { window.__aaWake.release(); } catch (e) {} window.__aaWake = null; }
   }
   async function garderEcran() { try { if (navigator.wakeLock) window.__aaWake = await navigator.wakeLock.request('screen'); } catch (e) {} }
@@ -898,7 +903,7 @@
     const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
     const k = VUES[parts[0]] ? parts[0] : 'accueil';
     arreterGuidage();
-    document.querySelectorAll('.nav a').forEach((a) => { if (a.dataset.k === k) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+    document.querySelectorAll('.nav a').forEach((a) => { if (a.dataset.k === (k === 'acouphene' ? 'sons' : k)) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     const v = document.getElementById('vue');
     try { await VUES[k](v, parts.length ? parts : ['accueil']); }
     catch (e) { v.innerHTML = `<div class="alerte erreur">Impossible de charger cette page : ${esc(e.message)}</div>`; }

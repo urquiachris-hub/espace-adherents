@@ -392,32 +392,18 @@
   };
 
   VUES.agenda = async (v) => {
+    // Agenda en lecture seule : les inscriptions et paiements passent par HelloAsso ou par un contact direct.
     const all = (await data('evenements')).filter((e) => e.publie !== false);
-    const mes = await api.mesInscriptions();
     const now = new Date();
     const futurs = all.filter((e) => new Date(e.fin || e.debut) >= now), passes = all.filter((e) => new Date(e.fin || e.debut) < now).reverse();
     const carte = (e) => `<div class="carte" data-e="${esc(e.id)}">
-      <div class="entete"><span class="chip">${esc(e.type)}</span>${mes.includes(e.id) ? '<span class="chip vert">Inscrit·e</span>' : ''}</div>
+      <div class="entete"><span class="chip">${esc(e.type)}</span></div>
       <h2 style="margin-top:8px">${esc(e.titre)}</h2>
-      <p class="muet petit" style="margin:4px 0">${esc(fDate(e.debut, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))} à ${esc(fHeure(e.debut))}${e.fin ? ` → ${esc(fDate(e.fin, { day: 'numeric', month: 'long' }))}` : ''}<br>${esc(e.lieu || '')}${e.prix ? ` · ${esc(fEur(e.prix))}` : ''}</p>
-      <p>${esc(e.description || '')}</p>
-      <p class="petit muet places"></p>
-      ${new Date(e.fin || e.debut) >= now && e.inscription_ouverte !== false ? `<div class="actions"><button type="button" class="btn ${mes.includes(e.id) ? 'secondaire' : ''}" data-act="${mes.includes(e.id) ? 'out' : 'in'}">${mes.includes(e.id) ? 'Me désinscrire' : "M'inscrire"}</button></div>` : ''}
-      <p class="petit erreur-e" style="color:var(--rouge)"></p></div>`;
-    v.innerHTML = `<h1>Agenda</h1><p class="muet">Séjours, sorties, groupes de parole et conférences. L'inscription réserve votre place ; je reviens vers vous pour les détails.</p>
+      <p class="muet petit" style="margin:4px 0">${esc(fDate(e.debut, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))} à ${esc(fHeure(e.debut))}${e.fin ? ` → ${esc(fDate(e.fin, { day: 'numeric', month: 'long' }))}` : ''}<br>${esc(e.lieu || '')}</p>
+      <p>${esc(e.description || '')}</p></div>`;
+    v.innerHTML = `<h1>Agenda</h1><p class="muet">Séjours, sorties, groupes de parole et conférences de l'association. Pour toute question ou pour participer, écrivez-nous : <a href="mailto:acouphenes.aventure@gmail.com">acouphenes.aventure@gmail.com</a>.</p>
       <div class="liste">${futurs.map(carte).join('') || '<p class="muet">Aucun rendez-vous prévu pour l\'instant.</p>'}</div>
       ${passes.length ? `<details><summary class="muet">Rendez-vous passés (${passes.length})</summary><div class="liste" style="margin-top:12px">${passes.map(carte).join('')}</div></details>` : ''}`;
-    for (const e of all) {
-      const el = v.querySelector(`[data-e="${CSS.escape(e.id)}"]`); if (!el) continue;
-      if (e.places != null) api.placesRestantes(e.id).then((n) => { if (n != null) el.querySelector('.places').textContent = n > 0 ? `${n} place${n > 1 ? 's' : ''} restante${n > 1 ? 's' : ''} sur ${e.places}` : 'Complet'; }).catch(() => {});
-      const b = el.querySelector('[data-act]');
-      if (b) b.addEventListener('click', async () => {
-        if (b.dataset.act === 'out' && !b.dataset.ok) { b.dataset.ok = '1'; b.textContent = 'Confirmer la désinscription'; return; }
-        b.disabled = true;
-        try { b.dataset.act === 'in' ? await api.inscrire(e.id) : await api.desinscrire(e.id); render(); }
-        catch (err) { el.querySelector('.erreur-e').textContent = /row-level|policy/i.test(err.message) ? "Inscription impossible : l'évènement est complet ou fermé." : err.message; b.disabled = false; }
-      });
-    }
   };
 
   VUES.journal = async (v) => {
@@ -631,7 +617,7 @@
   const ROLES = [['adherent', 'Adhérent'], ['sophrologue', 'Sophrologue'], ['admin', 'Admin']];
   const SCHEMAS = {
     articles: { titre: 'Articles', cle: 'titre', champs: [['titre', 'Titre', 'text', true], ['categorie', 'Catégorie', ['Comprendre', 'Se soigner', 'Au quotidien', 'Vivre avec', 'Actualités']], ['resume', 'Résumé', 'textarea'], ['contenu', 'Texte (## pour un intertitre, - pour une liste)', 'long'], ['source_nom', 'Source', 'text'], ['source_url', 'Lien de la source', 'url'], ['ordre', 'Ordre', 'number'], ['publie', 'Publié', 'check']] },
-    evenements: { titre: 'Agenda', cle: 'titre', champs: [['titre', 'Titre', 'text', true], ['type', 'Type', ['Séjour', 'Sortie', 'Groupe de parole', 'Conférence', 'AG', 'Autre']], ['debut', 'Début', 'datetime', true], ['fin', 'Fin', 'datetime'], ['lieu', 'Lieu', 'text'], ['description', 'Description', 'textarea'], ['places', 'Places (vide = sans limite)', 'number'], ['prix', 'Prix (€)', 'number'], ['inscription_ouverte', 'Inscriptions ouvertes', 'check'], ['publie', 'Publié', 'check']] },
+    evenements: { titre: 'Agenda', cle: 'titre', champs: [['titre', 'Titre', 'text', true], ['type', 'Type', ['Séjour', 'Sortie', 'Groupe de parole', 'Conférence', 'AG', 'Autre']], ['debut', 'Début', 'datetime', true], ['fin', 'Fin', 'datetime'], ['lieu', 'Lieu', 'text'], ['description', 'Description', 'textarea'], ['publie', 'Publié', 'check']] },
     newsletters: { titre: 'Lettres', cle: 'titre', champs: [['titre', 'Titre', 'text', true], ['date_parution', 'Date de parution', 'date', true], ['resume', 'Résumé', 'textarea'], ['url_pdf', 'Lien de lecture (Drive partagé « tous les utilisateurs disposant du lien »)', 'url'], ['publie', 'Publié', 'check']] },
     annuaire: { titre: 'Annuaire', cle: 'nom', champs: [['categorie', 'Catégorie', ['Urgences', 'Soins', 'Associations', "L'association"]], ['nom', 'Nom', 'text', true], ['description', 'Description', 'textarea'], ['telephone', 'Téléphone', 'text'], ['site', 'Site', 'url'], ['ordre', 'Ordre', 'number']] },
     sophro: { titre: 'Exercices', cle: 'titre', champs: [['titre', 'Titre', 'text', true], ['type', 'Catégorie', ['Sophrologie', 'TCC']], ['objectif', 'Objectif', 'textarea'], ['duree_min', 'Durée (min)', 'number'], ['rythme', 'Animation de respiration', ['', '4-6', '5-5', '4-4-4-4']], ['etapes', 'Étapes (une par ligne)', 'long'], ['audio_url', "Lien de l'audio (Supabase Storage › audios)", 'url'], ['valide', 'Relu par la sophrologue', 'check'], ['publie', 'Publié', 'check'], ['ordre', 'Ordre', 'number']] },

@@ -23,6 +23,13 @@ window.AASons = (() => {
     } catch (e) {}
   }
 
+  // Ondes de détente : notes graves (150 à 220 Hz), loin des aigus où se situent la plupart des acouphènes.
+  const ONDES = {
+    delta: { porteuse: 150, battement: 2.5, bruit: 'brun', niveauBruit: 0.55 },
+    theta: { porteuse: 200, battement: 6, bruit: 'rose', niveauBruit: 0.45 },
+    alpha: { porteuse: 220, battement: 10, bruit: 'rose', niveauBruit: 0.35 },
+  };
+
   function buffer(kind) {
     const len = ctx.sampleRate * 4, b = ctx.createBuffer(2, len, ctx.sampleRate);
     for (let ch = 0; ch < 2; ch++) {
@@ -55,7 +62,8 @@ window.AASons = (() => {
     stopNow();
     deverrouiller();
     gain = ctx.createGain(); gain.gain.value = 0; gain.connect(ctx.destination);
-    const base = { blanc: 'blanc', rose: 'rose', brun: 'brun', pluie: 'rose', ocean: 'brun' }[kind];
+    const onde = ONDES[kind];
+    const base = onde ? onde.bruit : { blanc: 'blanc', rose: 'rose', brun: 'brun', pluie: 'rose', ocean: 'brun' }[kind];
     src = ctx.createBufferSource(); src.buffer = buffer(base); src.loop = true;
     let node = src;
     if (kind === 'pluie') {
@@ -70,6 +78,19 @@ window.AASons = (() => {
       const depth = ctx.createGain(); depth.gain.value = 0.45;
       lfo.connect(depth); depth.connect(swell.gain); lfo.start();
       node.connect(lp); lp.connect(swell); node = swell; extra.push(lfo);
+    }
+    if (onde) {
+      // Battement binaural : une note grave dans chaque oreille, légèrement décalées.
+      // Le cerveau perçoit la différence comme une pulsation lente. Casque nécessaire.
+      const gBruit = ctx.createGain(); gBruit.gain.value = onde.niveauBruit;
+      node.connect(gBruit); node = gBruit;
+      const fusion = ctx.createChannelMerger(2);
+      [[onde.porteuse, 0], [onde.porteuse + onde.battement, 1]].forEach(([f, canal]) => {
+        const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+        const g = ctx.createGain(); g.gain.value = 0.14;
+        o.connect(g); g.connect(fusion, 0, canal); o.start(); extra.push(o);
+      });
+      fusion.connect(gain);
     }
     node.connect(gain);
     src.start();
@@ -98,4 +119,37 @@ window.AASons = (() => {
 
   const etat = () => (ctx ? ctx.state : 'aucun');
   return { play, stop, setVolume, minuterie, etat, enCours: () => current };
+})();
+
+/* Bloc « Ondes de détente » ajouté à la page Sons (à intégrer dans app.js lors d'une prochaine mise à jour). */
+(() => {
+  const ONDES = [
+    ['delta', 'Endormissement', 'Pulsation très lente (2,5 Hz) sous un bruit brun'],
+    ['theta', 'Apaiser l’anxiété', 'Pulsation lente (6 Hz) sous un bruit rose'],
+    ['alpha', 'Calme éveillé', 'Pulsation à 10 Hz, pour une pause dans la journée'],
+  ];
+  function ajouter() {
+    const grille = document.querySelector('.sons[aria-label="Ambiances"]');
+    if (!grille || document.getElementById('ondes')) return;
+    const vue = grille.parentElement;
+    const bloc = document.createElement('div');
+    bloc.innerHTML = `<h2 style="margin:20px 0 6px">Ondes de détente</h2>
+      <p class="muet petit" style="margin:0 0 10px">🎧 Avec un casque ou des écouteurs uniquement : chaque oreille reçoit une note légèrement différente. Des études montrent des effets modestes sur l’anxiété, variables selon les personnes. Ce n’est pas un traitement.</p>
+      <div class="sons" id="ondes" role="group" aria-label="Ondes de détente">${ONDES.map(([k, t, d]) => `<button type="button" class="son" data-onde="${k}" aria-pressed="${window.AASons.enCours() === k}"><strong>${t}</strong><span class="muet petit">${d}</span></button>`).join('')}</div>`;
+    grille.after(bloc);
+    const reste = vue.querySelector('#reste'), stopB = vue.querySelector('#stop');
+    const tick = (ms) => { if (reste) reste.textContent = ms ? `Arrêt dans ${Math.ceil(ms / 60000)} min` : ''; };
+    bloc.querySelectorAll('[data-onde]').forEach((b) => b.addEventListener('click', () => {
+      const vol = Number((vue.querySelector('#vol') || {}).value || 0.25);
+      const m = vue.querySelector('#minu button[aria-pressed="true"]');
+      try { window.AASons.play(b.dataset.onde, vol); } catch (e) { if (reste) reste.textContent = 'Le son ne peut pas démarrer sur cet appareil.'; return; }
+      window.AASons.minuterie(m ? Number(m.dataset.m) : 30, tick);
+      vue.querySelectorAll('.son').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      if (stopB) stopB.disabled = false;
+      setTimeout(() => { if (window.AASons.etat() !== 'running' && reste) reste.textContent = 'Le son est bloqué par le navigateur : touchez de nouveau l’ambiance.'; }, 1200);
+    }));
+    // Choisir un bruit classique désélectionne les ondes.
+    grille.addEventListener('click', (e) => { if (e.target.closest('.son')) bloc.querySelectorAll('.son').forEach((x) => x.setAttribute('aria-pressed', 'false')); });
+  }
+  new MutationObserver(ajouter).observe(document.documentElement, { childList: true, subtree: true });
 })();

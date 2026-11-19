@@ -30,6 +30,16 @@ window.AASons = (() => {
     alpha: { porteuse: 220, battement: 10, bruit: 'rose', niveauBruit: 0.15 },
   };
 
+  /* Volume : le curseur va de 0,02 à 0,8. L'oreille perçoit le volume de façon logarithmique,
+     donc on applique une courbe exponentielle : presque inaudible au minimum, progressif ensuite.
+     NIVEAU égalise les ambiances entre elles (mesuré : le bruit blanc est naturellement le plus fort). */
+  const NIVEAU = { blanc: 0.59, rose: 0.86, brun: 0.82, pluie: 1.39, ocean: 0.87, delta: 0.96, theta: 0.98, alpha: 0.98 };
+  function courbe(v) {
+    const t = Math.min(1, Math.max(0, (Number(v) - 0.02) / 0.78));
+    return (0.0004 * Math.pow(200, t)) / 0.12;
+  }
+  const cible = (v) => courbe(v) * (NIVEAU[current] || 1);
+
   function buffer(kind) {
     const len = ctx.sampleRate * 4, b = ctx.createBuffer(2, len, ctx.sampleRate);
     for (let ch = 0; ch < 2; ch++) {
@@ -94,11 +104,11 @@ window.AASons = (() => {
     }
     node.connect(gain);
     src.start();
-    gain.gain.setTargetAtTime(volume, ctx.currentTime, 0.4);
     current = kind;
+    gain.gain.setTargetAtTime(cible(volume), ctx.currentTime, 0.4);
   }
 
-  function setVolume(v) { if (gain && ctx) gain.gain.setTargetAtTime(v, ctx.currentTime, 0.1); }
+  function setVolume(v) { if (gain && ctx) gain.gain.setTargetAtTime(cible(v), ctx.currentTime, 0.1); }
 
   function stop(fade = 1.5) {
     if (!gain || !ctx) return stopNow();
